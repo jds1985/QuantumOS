@@ -86,7 +86,18 @@
     <!-- Simulation Embed -->
     <section class="card" style="margin-top:24px">
       <h3>Quantum OS Architecture Simulation</h3>
-      <iframe src="https://example-simulation-url.com" width="100%" height="500" style="border:1px solid #232428;border-radius:12px;"></iframe>
+      <div style="width:100%;height:600px;overflow:hidden;border:1px solid #232428;border-radius:12px;">
+        <iframe 
+          src="https://example-simulation-url.com" 
+          style="width:100%;height:100%;border:none;" 
+          loading="lazy" 
+          allowfullscreen>
+        </iframe>
+      </div>
+      <p style="margin-top:12px;font-size:14px;color:var(--muted);">
+        This interactive simulation demonstrates how the Quantum Core and Rings coordinate autonomous agents in real time. 
+        For best results, view in fullscreen mode.
+      </p>
     </section>
 
     <section class="grid">
