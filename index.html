@@ -13,6 +13,7 @@
   <style>
     :root{
       --bg:#0b0b0c; --panel:#111214; --ink:#e8e7e4; --muted:#b9b8b3; --accent:#f15b2a; --ring:#e06f47;
+      --edge: #232428;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -26,10 +27,10 @@
     .cta{appearance:none;border:none;background:var(--accent);color:#111;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(241,91,42,.25);transition:transform .15s ease,opacity .2s}
     .cta:hover{transform:translateY(-1px);opacity:.95}
     .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;margin-top:24px}
-    .badge{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:#15161a;color:var(--muted);border:1px solid #232428;font-size:12px}
+    .badge{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:#15161a;color:var(--muted);border:1px solid var(--edge);font-size:12px}
     h1{font-size:clamp(34px,6vw,64px);letter-spacing:.5px;margin:.2em 0 .15em}
     .sub{font-size:clamp(16px,2.2vw,22px);color:#cfcfcb;opacity:.95}
-    .rings{width:min(420px,90%);aspect-ratio:1;border-radius:50%;margin:18px auto;background:radial-gradient(circle at 50% 50%,rgba(241,91,42,.2),transparent 55%), #0e0f11;display:grid;place-items:center;border:1px solid #232428;box-shadow:0 0 80px rgba(241,91,42,.12) inset}
+    .rings{width:min(420px,90%);aspect-ratio:1;border-radius:50%;margin:18px auto;background:radial-gradient(circle at 50% 50%,rgba(241,91,42,.2),transparent 55%), #0e0f11;display:grid;place-items:center;border:1px solid var(--edge);box-shadow:0 0 80px rgba(241,91,42,.12) inset; position: relative;}
     .rings::before,.rings::after{content:"";position:absolute;border-radius:50%;}
     .ring{position:relative;width:78%;aspect-ratio:1;border:2px solid var(--ring);border-radius:50%;display:grid;place-items:center}
     .ring.small{width:46%}
@@ -42,7 +43,7 @@
     ul{margin:10px 0 0 0;padding-left:18px;color:#d8d7d2}
     li{margin:8px 0;color:#d6d5d0}
     .status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
-    .pill{background:#15161a;border:1px solid #232428;border-radius:12px;padding:14px;font-size:14px;color:#d8d7d2}
+    .pill{background:#15161a;border:1px solid var(--edge);border-radius:12px;padding:14px;font-size:14px;color:#d8d7d2}
     .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:var(--muted)}
     .links{display:flex;gap:14px;align-items:center}
     @media (max-width:900px){
@@ -50,6 +51,22 @@
       .grid{grid-template-columns:1fr}
       .status{grid-template-columns:1fr}
       .footer{flex-direction:column;align-items:flex-start}
+    }
+
+    /* --- Simulation container styles --- */
+    .sim-shell{
+      position:relative; width:100%; height:600px; overflow:hidden;
+      border:1px solid var(--edge); border-radius:12px; background:#0b0b0c;
+    }
+    .sim-fallback{
+      position:absolute; inset:0; display:grid; place-items:center; color:var(--muted);
+    }
+    .sim-controls{
+      display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:var(--muted); font-size:14px;
+    }
+    .btn-ghost{
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px;
+      border:1px solid var(--edge); background:rgba(255,255,255,.02); color:var(--ink); text-decoration:none; cursor:pointer;
     }
   </style>
 </head>
@@ -83,20 +100,22 @@
       </div>
     </section>
 
-    <!-- Simulation Embed -->
+    <!-- Simulation (Upgraded) -->
     <section class="card" style="margin-top:24px">
       <h3>Quantum OS Architecture Simulation</h3>
-      <div style="width:100%;height:600px;overflow:hidden;border:1px solid #232428;border-radius:12px;">
-        <iframe 
-          src="./quantum_os_demo.html" 
-          style="width:100%;height:100%;border:none;" 
-          loading="lazy" 
-          allowfullscreen>
-        </iframe>
+
+      <!-- Mount point for your React/Canvas sim -->
+      <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization">
+        <div class="sim-fallback">Loading Quantum Core & Rings…</div>
       </div>
+
+      <div class="sim-controls">
+        <span>Tip: hover nodes for labels • click canvas to pause/resume</span>
+        <button class="btn-ghost" id="toggleSimBtn" type="button">Toggle Pause</button>
+      </div>
+
       <p style="margin-top:12px;font-size:14px;color:var(--muted);">
-        This interactive simulation demonstrates how the Quantum Core and Rings coordinate autonomous agents in real time. 
-        For best results, view in fullscreen mode.
+        This interactive simulation shows the Quantum Core coordinating counter‑rotating data rings and orbiting nodes (Cipher Mesh, Memory Lattice, Vault Nexus, etc.).
       </p>
     </section>
 
@@ -153,6 +172,37 @@
     </div>
   </footer>
   
-  <script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Boot script: loads your simulation bundle and mounts it -->
+  <script type="module">
+    const container = document.getElementById('quantum-sim');
+    const toggleBtn = document.getElementById('toggleSimBtn');
+
+    // Forward a custom toggle event to the sim (your component can listen for it)
+    toggleBtn?.addEventListener('click', () => {
+      container.dispatchEvent(new CustomEvent('quantum:toggle'));
+    });
+
+    // Try to import your bundle and render
+    (async () => {
+      try {
+        // Your file should export: export function renderQuantumSimulation(container) { ... }
+        const mod = await import('./quantum-simulation.js');
+        if (typeof mod.renderQuantumSimulation === 'function') {
+          mod.renderQuantumSimulation(container);
+        } else if (typeof window.renderQuantumSimulation === 'function') {
+          window.renderQuantumSimulation(container);
+        } else {
+          throw new Error('renderQuantumSimulation() not found in quantum-simulation.js');
+        }
+      } catch (err) {
+        console.warn('Simulation not initialized:', err?.message || err);
+        // Keep the fallback visible; no hard failure
+      }
+    })();
+  </script>
 </body>
 </html>
