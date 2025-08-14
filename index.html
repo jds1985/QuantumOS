@@ -11,9 +11,7 @@
   <meta property="og:image" content="/og-image.jpg" />
   <meta name="theme-color" content="#0b0b0c" />
   <style>
-    :root{
-      --bg:#0b0b0c; --panel:#111214; --ink:#e8e7e4; --muted:#b9b8b3; --accent:#f15b2a; --ring:#e06f47; --edge:#232428;
-    }
+    :root{ --bg:#0b0b0c; --panel:#111214; --ink:#e8e7e4; --muted:#b9b8b3; --accent:#f15b2a; --ring:#e06f47; --edge:#232428; }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:radial-gradient(1200px 800px at 80% 10%,#141517 0%,#0b0b0c 60%);} 
@@ -44,28 +42,15 @@
     .pill{background:#15161a;border:1px solid var(--edge);border-radius:12px;padding:14px;font-size:14px;color:#d8d7d2}
     .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:#b9b8b3}
     .links{display:flex;gap:14px;align-items:center}
-    @media (max-width:900px){
-      .hero{grid-template-columns:1fr}
-      .grid{grid-template-columns:1fr}
-      .status{grid-template-columns:1fr}
-      .footer{flex-direction:column;align-items:flex-start}
-    }
 
     /* Simulation container */
-    .sim-shell{
-      position:relative; width:100%; height:600px; overflow:hidden;
-      border:1px solid var(--edge); border-radius:12px; background:#05060a;
-    }
+    .sim-shell{position:relative; width:100%; height:600px; overflow:hidden; border:1px solid var(--edge); border-radius:12px; background:#05060a;}
     .sim-controls{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:#b9b8b3; font-size:14px;}
     .btn-ghost{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--edge); background:rgba(255,255,255,.02); color:var(--ink); text-decoration:none; cursor:pointer;}
 
     /* Diagnostics overlay */
-    .diag{
-      position:absolute; top:8px; left:8px; z-index:10;
-      background:rgba(10,14,18,.7); color:#cde9ff; border:1px solid #2b3a46; border-radius:8px;
-      font:12px/1.3 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto; padding:8px 10px; pointer-events:none;
-      white-space:pre; min-width:160px;
-    }
+    .diag{position:absolute; top:8px; left:8px; z-index:10; background:rgba(10,14,18,.8); color:#cde9ff; border:1px solid #2b3a46; border-radius:8px; font:12px/1.3 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto; padding:8px 10px; pointer-events:none; white-space:pre; min-width:180px;}
+    @media (max-width:900px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:1fr} .status{grid-template-columns:1fr} .footer{flex-direction:column;align-items:flex-start}}
   </style>
 </head>
 <body>
@@ -104,11 +89,10 @@
 
       <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization">
         <div class="diag" id="diag">booting…</div>
-        <!-- canvas injected by script -->
       </div>
 
       <div class="sim-controls">
-        <span>Always-on animation • labels visible</span>
+        <span>Labels visible • diagnostics on</span>
         <button class="btn-ghost" id="toggleSimBtn" type="button">Toggle Pause</button>
       </div>
 
@@ -149,155 +133,132 @@
   
   <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 
-  <!-- Holographic Quantum Simulation (inline; with diagnostics) -->
+  <!-- Minimal holographic sim with diagnostics -->
   <script>
   (function(){
-    const container = document.getElementById('quantum-sim');
     const diag = document.getElementById('diag');
-    if (!container) return;
+    const container = document.getElementById('quantum-sim');
 
-    // Canvas
-    const canvas = document.createElement('canvas');
-    canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.display = 'block';
-    container.appendChild(canvas);
-    const ctx = canvas.getContext('2d', { alpha: false });
+    function status(msg){ if(diag) diag.textContent = msg; }
 
-    // Sizing
-    const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    let w=0,h=0,cx=0,cy=0,scale=0, fps=0, lastT=performance.now();
+    try{
+      status('init…');
 
-    function resize() {
-      const r = container.getBoundingClientRect();
-      canvas.width = Math.max(1, (r.width * DPR) | 0);
-      canvas.height = Math.max(1, (r.height * DPR) | 0);
-      w = canvas.width; h = canvas.height; cx = w/2; cy = h/2; scale = Math.min(w,h);
-    }
-    resize();
+      // Canvas
+      const canvas = document.createElement('canvas');
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.display = 'block';
+      container.appendChild(canvas);
 
-    // Palette
-    const BG='#05060a', CORE_A='#86e7ff', CORE_B='#b681ff', RING='#9fe4ff', ACCENT='#9be8ff', NODE='#e5fbff';
+      const DPR = Math.min(window.devicePixelRatio || 1, 2);
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if(!ctx){ status('ERROR: ctx null'); return; }
+      status('init ok (ctx ok)');
 
-    // Helpers
-    const TAU = Math.PI*2;
-    const rand=(a,b)=>a+Math.random()*(b-a);
-
-    function glow(x,y,r,c,a=1){ const g=ctx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,c); g.addColorStop(.35,c+'cc'); g.addColorStop(1,'#0000'); ctx.globalAlpha=a; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1; }
-    function roundedRect(c,x,y,w2,h2,r){ const rr=Math.min(r,w2/2,h2/2); c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr); c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2); c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr); c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y); }
-
-    // Background grid + stars
-    const stars = Array.from({length:260},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)}));
-    function drawBG(t){
-      // base
-      ctx.fillStyle=BG; ctx.fillRect(0,0,w,h);
-      // haze
-      const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,scale*.7); rg.addColorStop(0,'#0b0d13'); rg.addColorStop(1,BG);
-      ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
-      // scanlines
-      ctx.globalAlpha=.1; const step=8*DPR, shift=((t*.18)|0)%step; for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1); ctx.globalAlpha=1;
-      // rings
-      ctx.strokeStyle='#80dfff66'; ctx.lineWidth=1.2*DPR;
-      for(let r=scale*.12;r<=scale*.6;r+=scale*.08){ ctx.beginPath(); ctx.arc(cx,cy,r*.5,0,TAU); ctx.stroke(); }
-      // spokes
-      ctx.strokeStyle='#80dfff55'; const spokes=16, rot=t*0.00045;
-      for(let i=0;i<spokes;i++){ const a=(i/spokes)*TAU+rot; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*scale*.35, cy+Math.sin(a)*scale*.35); ctx.stroke(); }
-      // stars
-      for(const s of stars){ const x=s.x*w, y=s.y*h; const tw=.6+.4*Math.sin((t*.0012 + x*.01)*s.tw); ctx.globalAlpha=.55*s.z*tw; ctx.beginPath(); ctx.arc(x,y,s.s*s.z,0,TAU); ctx.fillStyle='#b0bed4'; ctx.fill(); } ctx.globalAlpha=1;
-    }
-
-    // System rings
-    const rings = [
-      { r:.18, w:2.8, speed:  0.12, dash:46 },
-      { r:.28, w:3.4, speed: -0.08, dash:56 },
-      { r:.39, w:3.6, speed:  0.06, dash:68 },
-      { r:.51, w:3.8, speed: -0.04, dash:82 },
-    ];
-    function drawRings(t){
-      ctx.lineCap='round';
-      for(const def of rings){
-        const baseR=def.r*scale*.5, dash=def.dash*DPR, gap=dash*.78, rot=t*def.speed;
-        glow(cx,cy,baseR+18*DPR,'#5ad2ff55',1);
-        ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); ctx.setLineDash([dash,gap]); ctx.lineWidth=def.w*DPR;
-        ctx.globalAlpha=.96; ctx.strokeStyle=RING; ctx.beginPath(); ctx.arc(0,0,baseR,0,TAU); ctx.stroke();
-        ctx.restore(); ctx.globalAlpha=1;
+      // Sizes
+      let w=0,h=0,cx=0,cy=0,scale=0, paused=false, fps=0, lastT=performance.now();
+      function resize(){
+        const r = container.getBoundingClientRect();
+        canvas.width  = Math.max(1, (r.width  * DPR) | 0);
+        canvas.height = Math.max(1, (r.height * DPR) | 0);
+        w=canvas.width; h=canvas.height; cx=w/2; cy=h/2; scale=Math.min(w,h);
       }
-    }
+      resize();
+      window.addEventListener('resize', resize);
+      document.getElementById('toggleSimBtn')?.addEventListener('click',()=>{ paused=!paused; });
 
-    // Core
-    function drawCore(t){
-      const pulse=1+.08*Math.sin(t*.0035), r=(scale*.075)*pulse;
-      glow(cx,cy,r*4.0,CORE_A,1); glow(cx,cy,r*2.8,CORE_B,.95);
-      ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU);
-      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-      g.addColorStop(0,'#fff'); g.addColorStop(.5,CORE_A); g.addColorStop(1,CORE_B);
-      ctx.fillStyle=g; ctx.fill();
-      ctx.globalAlpha=.55; ctx.strokeStyle=ACCENT; ctx.lineWidth=1.6*DPR;
-      ctx.beginPath(); ctx.moveTo(cx-r*2.3,cy); ctx.lineTo(cx+r*2.3,cy); ctx.moveTo(cx,cy-r*2.3); ctx.lineTo(cx,cy+r*2.3); ctx.stroke();
-      ctx.globalAlpha=1;
-    }
+      // Colors
+      const BG='#05060a', CORE_A='#86e7ff', CORE_B='#b681ff', RING='#9fe4ff', ACC='#9be8ff', NODE='#e5fbff';
+      const TAU = Math.PI*2;
 
-    // Nodes (labels always on)
-    const LABELS=['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
-    const nodes=Array.from({length:8},(_,i)=>({ baseR:.20+i*.055+rand(-.01,.01), size:(i===0?6.5:rand(3.8,5.2))*DPR, theta:rand(0,TAU), speed:(i%2===0?1:-1)*rand(.006,.012), label:LABELS[i%LABELS.length] }));
-    let paused=false, hover=-1;
+      function glow(x,y,r,c,a=1){
+        const g=ctx.createRadialGradient(x,y,0,x,y,r);
+        g.addColorStop(0,c); g.addColorStop(.35,c+'cc'); g.addColorStop(1,'#0000');
+        ctx.globalAlpha=a; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1;
+      }
+      function roundedRect(c,x,y,w2,h2,r){ const rr=Math.min(r,w2/2,h2/2); c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr); c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2); c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr); c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y); }
 
-    function drawLabel(ax,ay,theta,text,hi){
-      const offset=18*DPR + (hi?12*DPR:8*DPR);
-      const bx=ax+Math.cos(theta)*offset, by=ay+Math.sin(theta)*offset;
-      ctx.font=`${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
-      const pad=6*DPR, textW=ctx.measureText(text).width, bw=textW+pad*2, bh=22*DPR+pad*2, rx=6*DPR;
-      ctx.beginPath(); roundedRect(ctx, bx-pad, by-14*DPR-pad, bw, bh, rx);
-      ctx.fillStyle = hi ? 'rgba(12,16,22,0.98)' : 'rgba(12,16,22,0.86)'; ctx.fill();
-      ctx.globalAlpha = hi ? 0.95 : 0.7; ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
-      ctx.fillStyle=ACCENT; ctx.fillText(text, bx, by+6*DPR);
-      ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx - pad + bw/2, by - 14*DPR - pad + bh); ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
-    }
+      // Nodes
+      const LABELS=['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
+      const nodes = Array.from({length:8},(_,i)=>({ baseR:.20+i*.055, size:(i===0?6.5:5)*DPR, theta:Math.random()*TAU, speed:(i%2===0?1:-1)*0.008, label:LABELS[i%LABELS.length] }));
 
-    function drawNodes(t){
-      nodes.forEach((n,i)=>{
-        if(!paused) n.theta += n.speed;
-        const r=n.baseR*scale*.5, x=cx+Math.cos(n.theta)*r, y=cy+Math.sin(n.theta)*r, hi=i===hover;
-        glow(x,y,n.size*6, hi?'#e5fbffff':'#e5fbffbb',1);
-        ctx.beginPath(); ctx.arc(x,y,n.size*(hi?1.45:1),0,TAU);
-        const g=ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
-        g.addColorStop(0,'#fff'); g.addColorStop(1,NODE);
+      function drawOnce(t){
+        // BG
+        ctx.fillStyle=BG; ctx.fillRect(0,0,w,h);
+        const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,scale*.7); rg.addColorStop(0,'#0b0d13'); rg.addColorStop(1,BG);
+        ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
+
+        // Rings
+        const rings=[{r:.18,w:3.0,s: 0.12,d:46},{r:.28,w:3.4,s:-0.08,d:56},{r:.39,w:3.6,s:0.06,d:68},{r:.51,w:3.8,s:-0.04,d:82}];
+        ctx.lineCap='round';
+        for(const def of rings){
+          const baseR=def.r*scale*.5, dash=def.d*DPR, gap=dash*.78, rot=t*def.s;
+          glow(cx,cy,baseR+18*DPR,'#5ad2ff55',1);
+          ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); ctx.setLineDash([dash,gap]); ctx.lineWidth=def.w*DPR;
+          ctx.globalAlpha=.96; ctx.strokeStyle=RING; ctx.beginPath(); ctx.arc(0,0,baseR,0,TAU); ctx.stroke();
+          ctx.restore(); ctx.globalAlpha=1;
+        }
+
+        // Core
+        const r=(scale*.075)*(1+.08*Math.sin(t*.003));
+        glow(cx,cy,r*4.0,CORE_A,1); glow(cx,cy,r*2.8,CORE_B,.95);
+        ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU);
+        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+        g.addColorStop(0,'#fff'); g.addColorStop(.5,CORE_A); g.addColorStop(1,CORE_B);
         ctx.fillStyle=g; ctx.fill();
-        ctx.strokeStyle=hi?'#ffffffee':'#ffffffaa'; ctx.lineWidth=.9*DPR; ctx.stroke();
-        ctx.globalAlpha=.4; ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha=1;
-        drawLabel(x,y,n.theta,n.label,hi);
-      });
-    }
 
-    // Interaction
-    canvas.addEventListener('mousemove', (e)=>{
-      const r=canvas.getBoundingClientRect(); const mx=(e.clientX-r.left)*DPR, my=(e.clientY-r.top)*DPR;
-      hover=-1; for(let i=0;i<nodes.length;i++){ const n=nodes[i], R=n.baseR*scale*.5; const x=cx+Math.cos(n.theta)*R, y=cy+Math.sin(n.theta)*R; if((mx-x)*(mx-x)+(my-y)*(my-y) <= (n.size*3.5)*(n.size*3.5)){ hover=i; break; } }
-    });
-    document.getElementById('toggleSimBtn')?.addEventListener('click', ()=> paused=!paused);
-    window.addEventListener('resize', ()=>{ resize(); });
+        // Nodes + labels
+        nodes.forEach(n=>{
+          n.theta += paused ? 0 : n.speed;
+          const R=n.baseR*scale*.5, x=cx+Math.cos(n.theta)*R, y=cy+Math.sin(n.theta)*R;
+          glow(x,y,n.size*6,'#e5fbffcc',1);
+          ctx.beginPath(); ctx.arc(x,y,n.size,0,TAU);
+          const ng=ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
+          ng.addColorStop(0,'#fff'); ng.addColorStop(1,NODE);
+          ctx.fillStyle=ng; ctx.fill();
+          ctx.globalAlpha=.4; ctx.strokeStyle=ACC; ctx.lineWidth=1*DPR; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha=1;
 
-    // Diagnostics
-    window.onerror = (msg, src, line, col, err) => {
-      diag.textContent = `ERROR: ${msg}\n${src || ''} ${line || ''}:${col || ''}`;
-    };
+          // label
+          const ax=x+Math.cos(n.theta)*16*DPR, ay=y+Math.sin(n.theta)*16*DPR;
+          ctx.font=`${12*DPR}px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto`;
+          const pad=6*DPR, tw=ctx.measureText(n.label).width, bw=tw+pad*2, bh=22*DPR+pad*2, rx=6*DPR;
+          ctx.beginPath(); roundedRect(ctx, ax-pad, ay-14*DPR-pad, bw, bh, rx);
+          ctx.fillStyle='rgba(12,16,22,0.9)'; ctx.fill(); ctx.strokeStyle=ACC; ctx.lineWidth=1*DPR; ctx.stroke();
+          ctx.fillStyle=ACC; ctx.fillText(n.label, ax, ay+6*DPR);
+        });
+      }
 
-    // Draw ONCE (so something is visible even if RAF is throttled)
-    (function drawOnce(){
-      const t = performance.now();
-      drawBG(t); drawRings(t); drawCore(t); drawNodes(t);
-    })();
+      // Draw once (guaranteed visual)
+      drawOnce(performance.now());
+      status('init ok (ctx ok)\nstatic frame drawn');
 
-    // Animation loop
-    function loop(t){
-      const dt = t - lastT; lastT = t; fps = 1000 / Math.max(1, dt);
-      // ensure correct size
-      const r=container.getBoundingClientRect(), cw=(r.width*DPR)|0, ch=(r.height*DPR)|0;
-      if (cw!==w || ch!==h) resize();
+      // Loop
+      function loop(t){
+        const dt = t - lastT; lastT = t; fps = 1000 / Math.max(1, dt);
+        // keep size fresh
+        const r = container.getBoundingClientRect();
+        const cw = (r.width * DPR) | 0, ch = (r.height * DPR) | 0;
+        if (cw !== canvas.width || ch !== canvas.height) resize();
 
-      drawBG(t); drawRings(t); drawCore(t); drawNodes(t);
-      diag.textContent = `w×h: ${w}×${h}\nDPR: ${DPR.toFixed(2)}\nFPS: ${fps.toFixed(0)}\nPaused: ${paused ? 'yes' : 'no'}`;
+        drawOnce(t);
+        status(`raf ticking\nw×h: ${canvas.width}×${canvas.height}\nDPR: ${DPR}\nFPS: ${fps.toFixed(0)}\nPaused: ${paused?'yes':'no'}`);
+        requestAnimationFrame(loop);
+      }
+      status('starting raf…');
       requestAnimationFrame(loop);
+
+    }catch(err){
+      status('FATAL: ' + (err && err.message ? err.message : err));
     }
-    requestAnimationFrame(loop);
+
+    // Also catch async errors
+    window.addEventListener('error', e => {
+      if (!e) return;
+      const msg = (e.message || 'unknown error') + (e.filename ? `\n${e.filename}:${e.lineno || ''}:${e.colno || ''}` : '');
+      const old = diag.textContent || '';
+      diag.textContent = (old ? old + '\n' : '') + 'ERROR: ' + msg;
+    });
   })();
   </script>
 </body>
