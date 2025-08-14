@@ -56,7 +56,7 @@
     /* --- Simulation container styles --- */
     .sim-shell{
       position:relative; width:100%; height:600px; overflow:hidden;
-      border:1px solid var(--edge); border-radius:12px; background:#0b0b0c;
+      border:1px solid var(--edge); border-radius:12px; background:#05060a;
     }
     .sim-fallback{
       position:absolute; inset:0; display:grid; place-items:center; color:var(--muted);
@@ -100,11 +100,11 @@
       </div>
     </section>
 
-    <!-- Simulation (Upgraded) -->
+    <!-- Simulation (Upgraded, Holographic) -->
     <section class="card" style="margin-top:24px">
       <h3>Quantum OS Architecture Simulation</h3>
 
-      <!-- Mount point for your Canvas sim -->
+      <!-- Mount point -->
       <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization">
         <div class="sim-fallback">Loading Quantum Core & Rings…</div>
       </div>
@@ -173,17 +173,279 @@
   </footer>
   
   <script>
+    // Footer year
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
 
-  <!-- Load the sim (non‑module) and wire the toggle -->
-  <script src="/quantum-simulation.js"></script>
+  <!-- Holographic Quantum Simulation (inline, no deps) -->
   <script>
-    // If your JS is at the same level as index.html (not in /public), you can also use "./quantum-simulation.js"
+  (function(){
     const container = document.getElementById('quantum-sim');
-    document.getElementById('toggleSimBtn')?.addEventListener('click', () => {
-      container.dispatchEvent(new CustomEvent('quantum:toggle'));
+    if (!container) return;
+
+    // Clear fallback and insert canvas
+    while (container.firstChild) container.removeChild(container.firstChild);
+    const canvas = document.createElement('canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    container.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Palette (holographic hues)
+    const BG = '#05060a';
+    const CORE_A = '#7bdcff';   // cyan glow
+    const CORE_B = '#b474ff';   // violet glow
+    const RING = '#1f2633';
+    const ACCENT = '#8fe7ff';
+    const NODE = '#c8f3ff';
+
+    // Size / scale
+    let w=0,h=0,cx=0,cy=0,scale=0;
+    function resize() {
+      const r = container.getBoundingClientRect();
+      canvas.width = Math.max(1, (r.width * DPR) | 0);
+      canvas.height = Math.max(1, (r.height * DPR) | 0);
+      w = canvas.width; h = canvas.height;
+      cx = w/2; cy = h/2; scale = Math.min(w,h);
+    }
+    resize();
+
+    // Utility
+    const TAU = Math.PI*2;
+    const rand = (a,b)=>a+Math.random()*(b-a);
+
+    // Background grid (holographic)
+    function drawHolGrid(t){
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = BG;
+      ctx.fillRect(0,0,w,h);
+
+      // radial haze
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale*0.7);
+      g.addColorStop(0, '#0b0d13');
+      g.addColorStop(1, BG);
+      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+
+      // subtle scanlines
+      ctx.globalAlpha = 0.06;
+      ctx.fillStyle = '#7bdcff';
+      const step = 8 * DPR;
+      const shift = ((t*0.12)|0) % step;
+      for (let y = -shift; y < h; y += step) {
+        ctx.fillRect(0, y, w, 1);
+      }
+
+      // polar grid rings
+      ctx.globalAlpha = 0.08;
+      ctx.strokeStyle = '#8fe7ff';
+      ctx.lineWidth = 1 * DPR;
+      for (let r = scale*0.12; r <= scale*0.6; r += scale*0.08) {
+        ctx.beginPath(); ctx.arc(cx, cy, r*0.5, 0, TAU); ctx.stroke();
+      }
+
+      // spokes
+      const spokes = 16;
+      ctx.globalAlpha = 0.06;
+      for (let i=0;i<spokes;i++){
+        const a = (i/spokes)*TAU + t*0.0003;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a)*scale*0.35, cy + Math.sin(a)*scale*0.35);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    // Starfield (depth)
+    const starCount = Math.floor(240 * (scale/900));
+    const stars = Array.from({length: starCount}, () => ({
+      x: rand(0,w), y: rand(0,h), z: rand(0.2,1), s: rand(0.4,1.8)*DPR, tw: rand(0.6,1.6)
+    }));
+    function drawStars(t){
+      for (const s of stars){
+        const tw = 0.6 + 0.4 * Math.sin((t*0.0012 + s.x*0.01) * s.tw);
+        ctx.globalAlpha = 0.45 * s.z * tw;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.s*s.z, 0, TAU);
+        ctx.fillStyle = '#a4b2c9';
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Rings (counter-rotating, dashed)
+    const rings = [
+      { r:.18, w:2.0, speed:  0.06, dash: 42 },
+      { r:.28, w:2.4, speed: -0.04, dash: 50 },
+      { r:.39, w:2.8, speed:  0.03, dash: 60 },
+      { r:.51, w:3.0, speed: -0.02, dash: 72 },
+    ];
+    function glowCircle(x,y,r,color){
+      const grad = ctx.createRadialGradient(x,y,0,x,y,r);
+      grad.addColorStop(0, color);
+      grad.addColorStop(0.4, color + 'a0');
+      grad.addColorStop(1, '#0000');
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill();
+    }
+    function drawRings(t){
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (const def of rings){
+        const baseR = def.r * scale * 0.5;
+        const dash = def.dash * DPR, gap = dash * 0.78;
+        const rot = t * def.speed;
+
+        // holographic edge glow
+        glowCircle(cx, cy, baseR + 14*DPR, '#49c8ff33');
+
+        // ring stroke with additive blend
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rot);
+        ctx.setLineDash([dash, gap]);
+        ctx.lineWidth = def.w * DPR;
+
+        // cyan/violet gradient stroke
+        const lg = ctx.createLinearGradient(-baseR, 0, baseR, 0);
+        lg.addColorStop(0, '#71e1ff');
+        lg.addColorStop(1, '#b474ff');
+        ctx.strokeStyle = lg;
+        ctx.globalCompositeOperation = 'lighter';
+
+        ctx.beginPath(); ctx.arc(0, 0, baseR, 0, TAU); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // Core (dual-tone holographic pulse)
+    function drawCore(t){
+      const pulse = 1 + 0.06 * Math.sin(t*0.003);
+      const coreR = (scale*0.065) * pulse;
+
+      glowCircle(cx, cy, coreR*3.5, CORE_A);
+      glowCircle(cx, cy, coreR*2.4, CORE_B);
+
+      ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, TAU);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.6, CORE_A); g.addColorStop(1, CORE_B);
+      ctx.fillStyle = g; ctx.globalCompositeOperation = 'lighter'; ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+
+      // crosshair
+      ctx.globalAlpha = 0.35; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR;
+      ctx.beginPath(); ctx.moveTo(cx-coreR*2, cy); ctx.lineTo(cx+coreR*2, cy);
+      ctx.moveTo(cx, cy-coreR*2); ctx.lineTo(cx, cy+coreR*2); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Nodes (orbiting subsystems)
+    const labels = ['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
+    const nodes = Array.from({length: 8}, (_,i)=>({
+      baseR: 0.20 + i*0.055 + rand(-0.01,0.01),
+      size: (i===0? 4.8 : rand(2.4,3.8)) * DPR,
+      theta: rand(0, TAU),
+      speed: (i%2===0? 1 : -1) * rand(0.0026, 0.006),
+      label: labels[i % labels.length],
+      id: i
+    }));
+
+    let paused = false;
+    let hoverIndex = null;
+
+    function drawNodes(){
+      nodes.forEach((n, i) => {
+        if (!paused) n.theta += n.speed;
+        const r = n.baseR * scale * 0.5;
+        const x = cx + Math.cos(n.theta) * r;
+        const y = cy + Math.sin(n.theta) * r;
+
+        // trail glow
+        glowCircle(x, y, n.size*6, (i===hoverIndex? '#c8f3ffff' : '#c8f3ff88'));
+
+        // node body (holographic blend)
+        ctx.beginPath(); ctx.arc(x, y, n.size*(i===hoverIndex ? 1.5 : 1), 0, TAU);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, n.size*1.4);
+        g.addColorStop(0, '#ffffff'); g.addColorStop(1, NODE);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = g; ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+
+        // link line
+        ctx.globalAlpha = 0.25; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        // label bubble on hover
+        if (i === hoverIndex){
+          const label = n.label;
+          ctx.font = `${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
+          const pad = 6*DPR, textW = ctx.measureText(label).width;
+          const bx = x + 10*DPR, by = y - 10*DPR, bw = textW + pad*2, bh = 22*DPR + pad*2, rx = 6*DPR;
+
+          ctx.beginPath();
+          const r2 = Math.min(rx, bw/2, bh/2);
+          ctx.moveTo(bx - pad + r2, by - 14*DPR - pad);
+          ctx.lineTo(bx - pad + bw - r2, by - 14*DPR - pad);
+          ctx.quadraticCurveTo(bx - pad + bw, by - 14*DPR - pad, bx - pad + bw, by - 14*DPR - pad + r2);
+          ctx.lineTo(bx - pad + bw, by - 14*DPR - pad + bh - r2);
+          ctx.quadraticCurveTo(bx - pad + bw, by - 14*DPR - pad + bh, bx - pad + bw - r2, by - 14*DPR - pad + bh);
+          ctx.lineTo(bx - pad + r2, by - 14*DPR - pad + bh);
+          ctx.quadraticCurveTo(bx - pad, by - 14*DPR - pad + bh, bx - pad, by - 14*DPR - pad + bh - r2);
+          ctx.lineTo(bx - pad, by - 14*DPR - pad + r2);
+          ctx.quadraticCurveTo(bx - pad, by - 14*DPR - pad, bx - pad + r2, by - 14*DPR - pad);
+
+          ctx.fillStyle = 'rgba(12,16,22,0.92)'; ctx.fill();
+          ctx.globalAlpha = 0.7; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.stroke(); ctx.globalAlpha = 1;
+          ctx.fillStyle = ACCENT; ctx.fillText(label, bx, by + 6*DPR);
+        }
+      });
+    }
+
+    // Interaction
+    canvas.addEventListener('mousemove', (e)=>{
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * DPR;
+      const my = (e.clientY - rect.top) * DPR;
+      let found = null;
+      for (let i=0;i<nodes.length;i++){
+        const n = nodes[i];
+        const r = n.baseR * scale * 0.5;
+        const x = cx + Math.cos(n.theta) * r;
+        const y = cy + Math.sin(n.theta) * r;
+        const hit = n.size*3.5;
+        const dx = mx - x, dy = my - y;
+        if (dx*dx + dy*dy <= hit*hit) { found = i; break; }
+      }
+      hoverIndex = found;
     });
+    canvas.addEventListener('click', ()=> paused = !paused);
+    window.addEventListener('resize', resize);
+
+    // Toggle button dispatch (pause via external control)
+    document.getElementById('toggleSimBtn')?.addEventListener('click', ()=> { paused = !paused; });
+
+    // Animation loop
+    let raf = 0;
+    function frame(t){
+      raf = requestAnimationFrame(frame);
+      drawHolGrid(t);
+      drawStars(t);
+      drawRings(t);
+      drawCore(t);
+      drawNodes();
+    }
+
+    // Prime background and go
+    ctx.fillStyle = BG; ctx.fillRect(0,0,canvas.width,canvas.height);
+    frame(performance.now());
+  })();
   </script>
 </body>
 </html>
