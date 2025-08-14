@@ -27,7 +27,7 @@
     .cta{appearance:none;border:none;background:var(--accent);color:#111;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(241,91,42,.25);transition:transform .15s ease,opacity .2s}
     .cta:hover{transform:translateY(-1px);opacity:.95}
     .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;margin-top:24px}
-    .badge{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:#15161a;color:var(--muted);border:1px solid var(--edge);font-size:12px}
+    .badge{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:#15161a;color:#b9b8b3;border:1px solid var(--edge);font-size:12px}
     h1{font-size:clamp(34px,6vw,64px);letter-spacing:.5px;margin:.2em 0 .15em}
     .sub{font-size:clamp(16px,2.2vw,22px);color:#cfcfcb;opacity:.95}
     .rings{width:min(420px,90%);aspect-ratio:1;border-radius:50%;margin:18px auto;background:radial-gradient(circle at 50% 50%,rgba(241,91,42,.2),transparent 55%), #0e0f11;display:grid;place-items:center;border:1px solid var(--edge);box-shadow:0 0 80px rgba(241,91,42,.12) inset; position: relative;}
@@ -36,7 +36,7 @@
     .ring.small{width:46%}
     .ring.tiny{width:22%}
     .core{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px rgba(241,91,42,.8)}
-    .label{position:absolute;top:-24px;color:var(--muted);font-size:12px}
+    .label{position:absolute;top:-24px;color:#b9b8b3;font-size:12px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:36px}
     .card{background:linear-gradient(180deg,#121317,#0c0d0f);border:1px solid #1e2024;border-radius:16px;padding:22px}
     .card h3{margin:0 0 10px;font-size:18px}
@@ -44,7 +44,7 @@
     li{margin:8px 0;color:#d6d5d0}
     .status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
     .pill{background:#15161a;border:1px solid var(--edge);border-radius:12px;padding:14px;font-size:14px;color:#d8d7d2}
-    .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:var(--muted)}
+    .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:#b9b8b3}
     .links{display:flex;gap:14px;align-items:center}
     @media (max-width:900px){
       .hero{grid-template-columns:1fr}
@@ -53,13 +53,13 @@
       .footer{flex-direction:column;align-items:flex-start}
     }
 
-    /* --- Simulation container styles --- */
+    /* Simulation container */
     .sim-shell{
       position:relative; width:100%; height:600px; overflow:hidden;
       border:1px solid var(--edge); border-radius:12px; background:#05060a;
     }
-    .sim-fallback{position:absolute; inset:0; display:grid; place-items:center; color:var(--muted);}
-    .sim-controls{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:var(--muted); font-size:14px;}
+    .sim-fallback{position:absolute; inset:0; display:grid; place-items:center; color:#b9b8b3;}
+    .sim-controls{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:#b9b8b3; font-size:14px;}
     .btn-ghost{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--edge); background:rgba(255,255,255,.02); color:var(--ink); text-decoration:none; cursor:pointer;}
   </style>
 </head>
@@ -93,7 +93,7 @@
       </div>
     </section>
 
-    <!-- Simulation (Holographic) -->
+    <!-- Simulation -->
     <section class="card" style="margin-top:24px">
       <h3>Quantum OS Architecture Simulation</h3>
 
@@ -102,11 +102,11 @@
       </div>
 
       <div class="sim-controls">
-        <span>Tip: tap nodes; click canvas or button to pause/resume</span>
+        <span>Tap nodes for focus • use the button to pause/resume</span>
         <button class="btn-ghost" id="toggleSimBtn" type="button">Toggle Pause</button>
       </div>
 
-      <p style="margin-top:12px;font-size:14px;color:var(--muted);">
+      <p style="margin-top:12px;font-size:14px;color:#b9b8b3;">
         This interactive simulation shows the Quantum Core coordinating counter‑rotating data rings and orbiting nodes (Cipher Mesh, Memory Lattice, Vault Nexus, etc.).
       </p>
     </section>
@@ -166,74 +166,69 @@
   
   <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 
-  <!-- Holographic Quantum Simulation (inline, labels always visible) -->
+  <!-- Holographic Quantum Simulation (inline; faster motion; labels always visible) -->
   <script>
   (function(){
     const container = document.getElementById('quantum-sim');
     if (!container) return;
 
-    // Canvas
+    // Canvas setup
     while (container.firstChild) container.removeChild(container.firstChild);
     const canvas = document.createElement('canvas');
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.display = 'block';
+    canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.display = 'block';
     container.appendChild(canvas);
     const ctx = canvas.getContext('2d', { alpha: false });
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
     // Colors
-    const BG = '#05060a';
-    const CORE_A = '#86e7ff';
-    const CORE_B = '#b681ff';
-    const RING = '#8fe7ff';
-    const ACCENT = '#9be8ff';
-    const NODE = '#d9fbff';
+    const BG = '#05060a', CORE_A = '#86e7ff', CORE_B = '#b681ff', RING = '#9fe4ff', ACCENT = '#9be8ff', NODE = '#e5fbff';
 
-    // Size
+    // Sizing
     let w=0,h=0,cx=0,cy=0,scale=0;
-    function resize() {
+    function resize(){
       const r = container.getBoundingClientRect();
       canvas.width = Math.max(1, (r.width * DPR) | 0);
-      canvas.height = Math.max(1, (r.height * DPR) | 0);
-      w = canvas.width; h = canvas.height; cx = w/2; cy = h/2; scale = Math.min(w,h);
+      canvas.height= Math.max(1, (r.height * DPR) | 0);
+      w=canvas.width; h=canvas.height; cx=w/2; cy=h/2; scale=Math.min(w,h);
     }
     resize();
 
-    // Utils
     const TAU = Math.PI*2;
     const rand = (a,b)=>a+Math.random()*(b-a);
-    function glowCircle(x,y,r,color,alpha=1){
+
+    function glow(x,y,r,color,a=1){
       const g = ctx.createRadialGradient(x,y,0,x,y,r);
       g.addColorStop(0,color); g.addColorStop(.35,color+'cc'); g.addColorStop(1,'#0000');
-      ctx.globalAlpha = alpha; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.globalAlpha=a; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1;
     }
     function roundedRect(c, x, y, w2, h2, r){
-      const rr = Math.min(r, w2/2, h2/2);
+      const rr=Math.min(r,w2/2,h2/2);
       c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr);
       c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2);
       c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr);
       c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y);
     }
 
-    // Grid + stars
+    // Background grid
     function grid(t){
-      ctx.fillStyle = BG; ctx.fillRect(0,0,w,h);
-      const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale*0.7);
-      rg.addColorStop(0, '#0b0d13'); rg.addColorStop(1, BG);
-      ctx.fillStyle = rg; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle=BG; ctx.fillRect(0,0,w,h);
+      const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,scale*.7); rg.addColorStop(0,'#0b0d13'); rg.addColorStop(1,BG);
+      ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
 
-      ctx.globalAlpha=.1; const step=8*DPR, shift=((t*.12)|0)%step;
-      for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1);
-      ctx.globalAlpha=1;
+      // brighter scanlines
+      ctx.globalAlpha=.12; const step=8*DPR, shift=((t*.18)|0)%step; for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1); ctx.globalAlpha=1;
 
-      ctx.strokeStyle='#7bdcff55'; ctx.lineWidth=1*DPR;
+      // polar grid
+      ctx.strokeStyle='#80dfff66'; ctx.lineWidth=1.2*DPR;
       for(let r=scale*.12;r<=scale*.6;r+=scale*.08){ ctx.beginPath(); ctx.arc(cx,cy,r*.5,0,TAU); ctx.stroke(); }
-      ctx.strokeStyle='#7bdcff40';
-      const spokes=16;
-      for(let i=0;i<spokes;i++){ const a=(i/spokes)*TAU+t*.00025; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*scale*.35, cy+Math.sin(a)*scale*.35); ctx.stroke(); }
+      // rotating spokes
+      ctx.strokeStyle='#80dfff55';
+      const spokes=16, rot=t*0.00045;
+      for(let i=0;i<spokes;i++){ const a=(i/spokes)*TAU+rot; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*scale*.35, cy+Math.sin(a)*scale*.35); ctx.stroke(); }
     }
-    const stars = Array.from({length:260},()=>({x:rand(0,1),y:rand(0,1),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)}));
+
+    // Stars
+    let stars = Array.from({length:260},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)}));
     function drawStars(t){
       for(const s of stars){
         const x=s.x*w, y=s.y*h; const tw=.6+.4*Math.sin((t*.0012 + x*.01)*s.tw);
@@ -241,128 +236,115 @@
       } ctx.globalAlpha=1;
     }
 
-    // Rings
-    const rings = [
-      { r:.18, w:2.6, speed:  0.06, dash: 46 },
-      { r:.28, w:3.2, speed: -0.04, dash: 54 },
-      { r:.39, w:3.4, speed:  0.03, dash: 64 },
-      { r:.51, w:3.6, speed: -0.02, dash: 78 },
+    // Faster rings
+    const rings=[
+      { r:.18, w:2.8, speed:  0.12, dash:46 },
+      { r:.28, w:3.4, speed: -0.08, dash:56 },
+      { r:.39, w:3.6, speed:  0.06, dash:68 },
+      { r:.51, w:3.8, speed: -0.04, dash:82 },
     ];
     function drawRings(t){
       ctx.lineCap='round';
       for(const def of rings){
-        const baseR = def.r*scale*.5; const dash=def.dash*DPR, gap=dash*.78; const rot=t*def.speed;
-        glowCircle(cx,cy,baseR+16*DPR,'#5ad2ff44',1);
+        const baseR=def.r*scale*.5, dash=def.dash*DPR, gap=dash*.78, rot=t*def.speed;
+        glow(cx,cy,baseR+18*DPR,'#5ad2ff55',1);
         ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); ctx.setLineDash([dash,gap]); ctx.lineWidth=def.w*DPR;
-        ctx.globalAlpha=.95; ctx.strokeStyle=RING; ctx.beginPath(); ctx.arc(0,0,baseR,0,TAU); ctx.stroke();
+        ctx.globalAlpha=.96; ctx.strokeStyle=RING; ctx.beginPath(); ctx.arc(0,0,baseR,0,TAU); ctx.stroke();
         ctx.restore(); ctx.globalAlpha=1;
       }
     }
 
     // Core
     function drawCore(t){
-      const pulse=1+.06*Math.sin(t*.003); const r=(scale*.07)*pulse;
-      glowCircle(cx,cy,r*3.8,CORE_A,1); glowCircle(cx,cy,r*2.6,CORE_B,.9);
+      const pulse=1+.08*Math.sin(t*.0035), r=(scale*.075)*pulse;
+      glow(cx,cy,r*4.0,CORE_A,1); glow(cx,cy,r*2.8,CORE_B,.95);
       ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU);
       const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-      g.addColorStop(0,'#fff'); g.addColorStop(.55,CORE_A); g.addColorStop(1,CORE_B);
+      g.addColorStop(0,'#fff'); g.addColorStop(.5,CORE_A); g.addColorStop(1,CORE_B);
       ctx.fillStyle=g; ctx.fill();
-      ctx.globalAlpha=.5; ctx.strokeStyle=ACCENT; ctx.lineWidth=1.5*DPR;
-      ctx.beginPath(); ctx.moveTo(cx-r*2.2,cy); ctx.lineTo(cx+r*2.2,cy); ctx.moveTo(cx,cy-r*2.2); ctx.lineTo(cx,cy+r*2.2); ctx.stroke();
+      ctx.globalAlpha=.55; ctx.strokeStyle=ACCENT; ctx.lineWidth=1.6*DPR;
+      ctx.beginPath(); ctx.moveTo(cx-r*2.3,cy); ctx.lineTo(cx+r*2.3,cy); ctx.moveTo(cx,cy-r*2.3); ctx.lineTo(cx,cy+r*2.3); ctx.stroke();
       ctx.globalAlpha=1;
     }
 
-    // Nodes + labels (always visible)
-    const labels = ['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
-    const nodes = Array.from({length:8},(_,i)=>({
-      baseR: .20 + i*.055 + rand(-.01,.01),
-      size: (i===0? 6.0 : rand(3.2,4.8)) * DPR,
-      theta: rand(0,TAU),
-      speed: (i%2===0?1:-1) * rand(.0026,.006),
-      label: labels[i%labels.length]
+    // Nodes (faster)
+    const labels=['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
+    const nodes=Array.from({length:8},(_,i)=>({
+      baseR:.20+i*.055+rand(-.01,.01),
+      size:(i===0?6.5:rand(3.8,5.2))*DPR,
+      theta:rand(0,TAU),
+      speed:(i%2===0?1:-1)*rand(.006,.012),   // faster!
+      label:labels[i%labels.length]
     }));
     let paused=false, hoverIndex=null;
 
-    function drawLabel(ax,ay,theta,text,highlight){
-      // push label outward along orbit direction
-      const offset = 16*DPR + 8*DPR*(highlight?1.2:1);
-      const bx = ax + Math.cos(theta)*offset;
-      const by = ay + Math.sin(theta)*offset;
-
-      ctx.font = `${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
-      const pad = 6*DPR, textW = ctx.measureText(text).width;
-      const bw = textW + pad*2, bh = 22*DPR + pad*2, rx = 6*DPR;
-
-      ctx.beginPath(); roundedRect(ctx, bx - pad, by - 14*DPR - pad, bw, bh, rx);
-      ctx.fillStyle = highlight ? 'rgba(12,16,22,0.96)' : 'rgba(12,16,22,0.82)';
-      ctx.fill();
-      ctx.globalAlpha = highlight ? 0.9 : 0.6;
-      ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      ctx.fillStyle = ACCENT;
-      ctx.fillText(text, bx, by + 6*DPR);
-
-      // leader line
-      ctx.globalAlpha = 0.55;
-      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx - pad + bw/2, by - 14*DPR - pad + bh); ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.stroke();
-      ctx.globalAlpha = 1;
+    function drawLabel(ax,ay,theta,text,hi){
+      const offset=18*DPR + (hi?12*DPR:8*DPR);
+      const bx=ax+Math.cos(theta)*offset, by=ay+Math.sin(theta)*offset;
+      ctx.font=`${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
+      const pad=6*DPR, textW=ctx.measureText(text).width, bw=textW+pad*2, bh=22*DPR+pad*2, rx=6*DPR;
+      ctx.beginPath(); roundedRect(ctx, bx-pad, by-14*DPR-pad, bw, bh, rx);
+      ctx.fillStyle = hi ? 'rgba(12,16,22,0.98)' : 'rgba(12,16,22,0.86)'; ctx.fill();
+      ctx.globalAlpha = hi ? 0.95 : 0.7; ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
+      ctx.fillStyle=ACCENT; ctx.fillText(text, bx, by+6*DPR);
+      // leader
+      ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx - pad + bw/2, by - 14*DPR - pad + bh); ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
     }
 
-    function drawNodes(){
+    // orbit trails buffer (extra motion cue)
+    const trail = document.createElement('canvas'); const tctx = trail.getContext('2d',{alpha:true});
+    function resizeTrail(){ trail.width=w; trail.height=h; tctx.clearRect(0,0,w,h); }
+    resizeTrail();
+
+    function drawNodes(t){
+      // fade old trails slightly
+      tctx.fillStyle='rgba(5,6,10,0.12)'; tctx.fillRect(0,0,w,h);
+
       nodes.forEach((n,i)=>{
         if(!paused) n.theta += n.speed;
-        const r = n.baseR*scale*.5;
-        const x = cx + Math.cos(n.theta)*r;
-        const y = cy + Math.sin(n.theta)*r;
+        const r=n.baseR*scale*.5, x=cx+Math.cos(n.theta)*r, y=cy+Math.sin(n.theta)*r;
+        const hi=i===hoverIndex;
 
-        const highlight = (i===hoverIndex);
+        // draw trail dot into buffer
+        tctx.beginPath(); tctx.arc(x,y,n.size*.35,0,TAU); tctx.fillStyle=hi?'#e5fbff':'#b9ecff'; tctx.globalAlpha=.35; tctx.fill(); tctx.globalAlpha=1;
 
-        glowCircle(x,y,n.size*6, highlight ? '#d9fbffff' : '#d9fbffbb',1);
-        ctx.beginPath(); ctx.arc(x,y,n.size*(highlight?1.45:1),0,TAU);
-        const g = ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
+        glow(x,y,n.size*6, hi?'#e5fbffff':'#e5fbffbb',1);
+        ctx.beginPath(); ctx.arc(x,y,n.size*(hi?1.45:1),0,TAU);
+        const g=ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
         g.addColorStop(0,'#fff'); g.addColorStop(1,NODE);
         ctx.fillStyle=g; ctx.fill();
-        ctx.strokeStyle = highlight ? '#ffffffee' : '#ffffffaa'; ctx.lineWidth = 0.9*DPR; ctx.stroke();
+        ctx.strokeStyle=hi?'#ffffffee':'#ffffffaa'; ctx.lineWidth=.9*DPR; ctx.stroke();
 
-        // link to core
-        ctx.globalAlpha = 0.35; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR;
-        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha = 1;
+        ctx.globalAlpha=.4; ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha=1;
 
-        // ALWAYS SHOW LABEL
-        drawLabel(x,y,n.theta,n.label,highlight);
+        // labels always on
+        drawLabel(x,y,n.theta,n.label,hi);
       });
+
+      // composite trails under current frame
+      ctx.globalAlpha=1; ctx.drawImage(trail,0,0);
     }
 
     // Interaction
     canvas.addEventListener('mousemove', (e)=>{
-      const rect = canvas.getBoundingClientRect();
-      const mx = (e.clientX - rect.left) * DPR;
-      const my = (e.clientY - rect.top) * DPR;
-      let found = null;
-      for (let i=0;i<nodes.length;i++){
-        const n = nodes[i], r = n.baseR*scale*.5;
-        const x = cx + Math.cos(n.theta)*r, y = cy + Math.sin(n.theta)*r;
-        const hit = n.size*3.5, dx = mx - x, dy = my - y;
-        if (dx*dx + dy*dy <= hit*hit) { found = i; break; }
-      }
-      hoverIndex = found;
+      const r=canvas.getBoundingClientRect(); const mx=(e.clientX-r.left)*DPR, my=(e.clientY-r.top)*DPR;
+      let hit=null; for(let i=0;i<nodes.length;i++){ const n=nodes[i], R=n.baseR*scale*.5; const x=cx+Math.cos(n.theta)*R, y=cy+Math.sin(n.theta)*R; const d=(mx-x)*(mx-x)+(my-y)*(my-y); if(d<= (n.size*3.5)*(n.size*3.5)){ hit=i; break; } }
+      hoverIndex=hit;
     });
-    canvas.addEventListener('click', ()=> paused = !paused);
-    document.getElementById('toggleSimBtn')?.addEventListener('click', ()=> paused = !paused);
-    window.addEventListener('resize', resize);
+    // Only the button can pause
+    document.getElementById('toggleSimBtn')?.addEventListener('click',()=>{ paused=!paused; });
 
-    // Loop
-    function frame(t){
-      grid(t);
-      drawStars(t);
-      drawRings(t);
-      drawCore(t);
-      drawNodes();
-      requestAnimationFrame(frame);
+    window.addEventListener('resize', ()=>{ resize(); stars = Array.from({length:260},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)})); resizeTrail(); });
+
+    // Animation with per-frame size check
+    function loop(t){
+      const r=container.getBoundingClientRect(); const cw=(r.width*DPR)|0, ch=(r.height*DPR)|0; if(cw!==w||ch!==h){ resize(); resizeTrail(); }
+      grid(t); drawStars(t); drawRings(t); drawCore(t); drawNodes(t);
+      requestAnimationFrame(loop);
     }
-    ctx.fillStyle = BG; ctx.fillRect(0,0,canvas.width,canvas.height);
-    requestAnimationFrame(frame);
+    // start
+    ctx.fillStyle=BG; ctx.fillRect(0,0,canvas.width,canvas.height);
+    requestAnimationFrame(loop);
   })();
   </script>
 </body>
