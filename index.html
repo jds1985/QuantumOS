@@ -13,7 +13,7 @@
   <style>
     :root{
       --bg:#0b0b0c; --panel:#111214; --ink:#e8e7e4; --muted:#b9b8b3; --accent:#f15b2a; --ring:#e06f47;
-      --edge: #232428;
+      --edge:#232428;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -44,7 +44,7 @@
     li{margin:8px 0;color:#d6d5d0}
     .status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
     .pill{background:#15161a;border:1px solid var(--edge);border-radius:12px;padding:14px;font-size:14px;color:#d8d7d2}
-    .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:#d8d7d2}
+    .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:var(--muted)}
     .links{display:flex;gap:14px;align-items:center}
     @media (max-width:900px){
       .hero{grid-template-columns:1fr}
@@ -58,16 +58,9 @@
       position:relative; width:100%; height:600px; overflow:hidden;
       border:1px solid var(--edge); border-radius:12px; background:#05060a;
     }
-    .sim-fallback{
-      position:absolute; inset:0; display:grid; place-items:center; color:var(--muted);
-    }
-    .sim-controls{
-      display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:var(--muted); font-size:14px;
-    }
-    .btn-ghost{
-      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px;
-      border:1px solid var(--edge); background:rgba(255,255,255,.02); color:var(--ink); text-decoration:none; cursor:pointer;
-    }
+    .sim-fallback{position:absolute; inset:0; display:grid; place-items:center; color:var(--muted);}
+    .sim-controls{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:var(--muted); font-size:14px;}
+    .btn-ghost{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--edge); background:rgba(255,255,255,.02); color:var(--ink); text-decoration:none; cursor:pointer;}
   </style>
 </head>
 <body>
@@ -100,17 +93,16 @@
       </div>
     </section>
 
-    <!-- Simulation (Upgraded, Holographic) -->
+    <!-- Simulation (Holographic) -->
     <section class="card" style="margin-top:24px">
       <h3>Quantum OS Architecture Simulation</h3>
 
-      <!-- Mount point -->
       <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization">
         <div class="sim-fallback">Loading Quantum Core & Rings…</div>
       </div>
 
       <div class="sim-controls">
-        <span>Tip: hover nodes for labels • click canvas to pause/resume</span>
+        <span>Tip: tap nodes; click canvas or button to pause/resume</span>
         <button class="btn-ghost" id="toggleSimBtn" type="button">Toggle Pause</button>
       </div>
 
@@ -172,12 +164,9 @@
     </div>
   </footer>
   
-  <script>
-    // Footer year
-    document.getElementById('y').textContent = new Date().getFullYear();
-  </script>
+  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 
-  <!-- Holographic Quantum Simulation (inline, no deps) -->
+  <!-- Holographic Quantum Simulation (inline, labels always visible) -->
   <script>
   (function(){
     const container = document.getElementById('quantum-sim');
@@ -193,7 +182,7 @@
     const ctx = canvas.getContext('2d', { alpha: false });
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-    // Colors / style
+    // Colors
     const BG = '#05060a';
     const CORE_A = '#86e7ff';
     const CORE_B = '#b681ff';
@@ -202,193 +191,146 @@
     const NODE = '#d9fbff';
 
     // Size
-    let w=0,h=0,cx=0,cy=0,scale=0, lastW=0, lastH=0;
+    let w=0,h=0,cx=0,cy=0,scale=0;
     function resize() {
       const r = container.getBoundingClientRect();
       canvas.width = Math.max(1, (r.width * DPR) | 0);
       canvas.height = Math.max(1, (r.height * DPR) | 0);
       w = canvas.width; h = canvas.height; cx = w/2; cy = h/2; scale = Math.min(w,h);
-      lastW = w; lastH = h;
     }
     resize();
 
     // Utils
     const TAU = Math.PI*2;
     const rand = (a,b)=>a+Math.random()*(b-a);
+    function glowCircle(x,y,r,color,alpha=1){
+      const g = ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,color); g.addColorStop(.35,color+'cc'); g.addColorStop(1,'#0000');
+      ctx.globalAlpha = alpha; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha = 1;
+    }
+    function roundedRect(c, x, y, w2, h2, r){
+      const rr = Math.min(r, w2/2, h2/2);
+      c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr);
+      c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2);
+      c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr);
+      c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y);
+    }
 
-    // Grid + scanlines
-    function drawHolGrid(t){
-      // soft clear
-      ctx.fillStyle = BG;
-      ctx.fillRect(0,0,w,h);
-
-      // radial haze
+    // Grid + stars
+    function grid(t){
+      ctx.fillStyle = BG; ctx.fillRect(0,0,w,h);
       const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale*0.7);
-      rg.addColorStop(0, '#0b0d13');
-      rg.addColorStop(1, BG);
+      rg.addColorStop(0, '#0b0d13'); rg.addColorStop(1, BG);
       ctx.fillStyle = rg; ctx.fillRect(0,0,w,h);
 
-      // scanlines (brighter for mobile visibility)
-      ctx.globalAlpha = 0.1;
-      const step = 8 * DPR;
-      const shift = ((t*0.12)|0) % step;
-      for (let y = -shift; y < h; y += step) ctx.fillRect(0, y, w, 1);
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha=.1; const step=8*DPR, shift=((t*.12)|0)%step;
+      for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1);
+      ctx.globalAlpha=1;
 
-      // polar grid
-      ctx.strokeStyle = '#7bdcff55';
-      ctx.lineWidth = 1 * DPR;
-      for (let r = scale*0.12; r <= scale*0.6; r += scale*0.08) {
-        ctx.beginPath(); ctx.arc(cx, cy, r*0.5, 0, TAU); ctx.stroke();
-      }
-      // spokes
-      ctx.strokeStyle = '#7bdcff40';
-      const spokes = 16;
-      for (let i=0;i<spokes;i++){
-        const a = (i/spokes)*TAU + t*0.00025;
-        ctx.beginPath(); ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + Math.cos(a)*scale*0.35, cy + Math.sin(a)*scale*0.35);
-        ctx.stroke();
-      }
+      ctx.strokeStyle='#7bdcff55'; ctx.lineWidth=1*DPR;
+      for(let r=scale*.12;r<=scale*.6;r+=scale*.08){ ctx.beginPath(); ctx.arc(cx,cy,r*.5,0,TAU); ctx.stroke(); }
+      ctx.strokeStyle='#7bdcff40';
+      const spokes=16;
+      for(let i=0;i<spokes;i++){ const a=(i/spokes)*TAU+t*.00025; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*scale*.35, cy+Math.sin(a)*scale*.35); ctx.stroke(); }
     }
-
-    // Stars
-    const starCount = 260;
-    let stars = [];
-    function seedStars(){
-      stars = Array.from({length: starCount}, () => ({
-        x: rand(0,w), y: rand(0,h), z: rand(0.2,1), s: rand(0.6,1.8)*DPR, tw: rand(0.6,1.6)
-      }));
-    }
-    seedStars();
+    const stars = Array.from({length:260},()=>({x:rand(0,1),y:rand(0,1),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)}));
     function drawStars(t){
-      for (const s of stars){
-        const tw = 0.6 + 0.4 * Math.sin((t*0.0012 + s.x*0.01) * s.tw);
-        ctx.globalAlpha = 0.55 * s.z * tw;
-        ctx.beginPath(); ctx.arc(s.x, s.y, s.s*s.z, 0, TAU);
-        ctx.fillStyle = '#b0bed4'; ctx.fill();
-      }
-      ctx.globalAlpha = 1;
+      for(const s of stars){
+        const x=s.x*w, y=s.y*h; const tw=.6+.4*Math.sin((t*.0012 + x*.01)*s.tw);
+        ctx.globalAlpha=.55*s.z*tw; ctx.beginPath(); ctx.arc(x,y,s.s*s.z,0,TAU); ctx.fillStyle='#b0bed4'; ctx.fill();
+      } ctx.globalAlpha=1;
     }
 
     // Rings
     const rings = [
-      { r:.18, w:2.4, speed:  0.06, dash: 46 },
-      { r:.28, w:3.0, speed: -0.04, dash: 54 },
-      { r:.39, w:3.2, speed:  0.03, dash: 64 },
-      { r:.51, w:3.4, speed: -0.02, dash: 78 },
+      { r:.18, w:2.6, speed:  0.06, dash: 46 },
+      { r:.28, w:3.2, speed: -0.04, dash: 54 },
+      { r:.39, w:3.4, speed:  0.03, dash: 64 },
+      { r:.51, w:3.6, speed: -0.02, dash: 78 },
     ];
-    function glowCircle(x,y,r,color, alpha=1){
-      const grad = ctx.createRadialGradient(x,y,0,x,y,r);
-      grad.addColorStop(0, color);
-      grad.addColorStop(0.35, color + 'cc');
-      grad.addColorStop(1, '#0000');
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill();
-      ctx.globalAlpha = 1;
-    }
     function drawRings(t){
-      ctx.lineCap = 'round';
-      for (const def of rings){
-        const baseR = def.r * scale * 0.5;
-        const dash = def.dash * DPR, gap = dash * 0.78;
-        const rot = t * def.speed;
-
-        glowCircle(cx, cy, baseR + 16*DPR, '#5ad2ff44', 1);
-
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(rot);
-        ctx.setLineDash([dash, gap]);
-        ctx.lineWidth = def.w * DPR;
-
-        // brighter single color for reliability + slight alpha
-        ctx.globalAlpha = 0.95;
-        ctx.strokeStyle = RING;
-        ctx.beginPath(); ctx.arc(0, 0, baseR, 0, TAU); ctx.stroke();
-        ctx.restore();
-        ctx.globalAlpha = 1;
+      ctx.lineCap='round';
+      for(const def of rings){
+        const baseR = def.r*scale*.5; const dash=def.dash*DPR, gap=dash*.78; const rot=t*def.speed;
+        glowCircle(cx,cy,baseR+16*DPR,'#5ad2ff44',1);
+        ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); ctx.setLineDash([dash,gap]); ctx.lineWidth=def.w*DPR;
+        ctx.globalAlpha=.95; ctx.strokeStyle=RING; ctx.beginPath(); ctx.arc(0,0,baseR,0,TAU); ctx.stroke();
+        ctx.restore(); ctx.globalAlpha=1;
       }
     }
 
     // Core
     function drawCore(t){
-      const pulse = 1 + 0.06 * Math.sin(t*0.003);
-      const coreR = (scale*0.07) * pulse;
-      glowCircle(cx, cy, coreR*3.8, CORE_A, 1);
-      glowCircle(cx, cy, coreR*2.6, CORE_B, 0.9);
+      const pulse=1+.06*Math.sin(t*.003); const r=(scale*.07)*pulse;
+      glowCircle(cx,cy,r*3.8,CORE_A,1); glowCircle(cx,cy,r*2.6,CORE_B,.9);
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU);
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+      g.addColorStop(0,'#fff'); g.addColorStop(.55,CORE_A); g.addColorStop(1,CORE_B);
+      ctx.fillStyle=g; ctx.fill();
+      ctx.globalAlpha=.5; ctx.strokeStyle=ACCENT; ctx.lineWidth=1.5*DPR;
+      ctx.beginPath(); ctx.moveTo(cx-r*2.2,cy); ctx.lineTo(cx+r*2.2,cy); ctx.moveTo(cx,cy-r*2.2); ctx.lineTo(cx,cy+r*2.2); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
 
-      ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, TAU);
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-      g.addColorStop(0, '#ffffff');
-      g.addColorStop(0.55, CORE_A);
-      g.addColorStop(1, CORE_B);
-      ctx.fillStyle = g; ctx.fill();
+    // Nodes + labels (always visible)
+    const labels = ['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
+    const nodes = Array.from({length:8},(_,i)=>({
+      baseR: .20 + i*.055 + rand(-.01,.01),
+      size: (i===0? 6.0 : rand(3.2,4.8)) * DPR,
+      theta: rand(0,TAU),
+      speed: (i%2===0?1:-1) * rand(.0026,.006),
+      label: labels[i%labels.length]
+    }));
+    let paused=false, hoverIndex=null;
 
-      // crosshair (brighter)
-      ctx.globalAlpha = 0.5; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.5*DPR;
-      ctx.beginPath(); ctx.moveTo(cx-coreR*2.2, cy); ctx.lineTo(cx+coreR*2.2, cy);
-      ctx.moveTo(cx, cy-coreR*2.2); ctx.lineTo(cx, cy+coreR*2.2); ctx.stroke();
+    function drawLabel(ax,ay,theta,text,highlight){
+      // push label outward along orbit direction
+      const offset = 16*DPR + 8*DPR*(highlight?1.2:1);
+      const bx = ax + Math.cos(theta)*offset;
+      const by = ay + Math.sin(theta)*offset;
+
+      ctx.font = `${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
+      const pad = 6*DPR, textW = ctx.measureText(text).width;
+      const bw = textW + pad*2, bh = 22*DPR + pad*2, rx = 6*DPR;
+
+      ctx.beginPath(); roundedRect(ctx, bx - pad, by - 14*DPR - pad, bw, bh, rx);
+      ctx.fillStyle = highlight ? 'rgba(12,16,22,0.96)' : 'rgba(12,16,22,0.82)';
+      ctx.fill();
+      ctx.globalAlpha = highlight ? 0.9 : 0.6;
+      ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = ACCENT;
+      ctx.fillText(text, bx, by + 6*DPR);
+
+      // leader line
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx - pad + bw/2, by - 14*DPR - pad + bh); ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
-    // Nodes
-    const labels = ['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
-    const nodes = Array.from({length: 8}, (_,i)=>({
-      baseR: 0.20 + i*0.055 + rand(-0.01,0.01),
-      size: (i===0? 6.0 : rand(3.2,4.8)) * DPR,   // bigger for mobile visibility
-      theta: rand(0, TAU),
-      speed: (i%2===0? 1 : -1) * rand(0.0026, 0.006),
-      label: labels[i % labels.length],
-      id: i
-    }));
-    let paused = false, hoverIndex = null;
-
     function drawNodes(){
-      nodes.forEach((n, i) => {
-        if (!paused) n.theta += n.speed;
-        const r = n.baseR * scale * 0.5;
-        const x = cx + Math.cos(n.theta) * r;
-        const y = cy + Math.sin(n.theta) * r;
+      nodes.forEach((n,i)=>{
+        if(!paused) n.theta += n.speed;
+        const r = n.baseR*scale*.5;
+        const x = cx + Math.cos(n.theta)*r;
+        const y = cy + Math.sin(n.theta)*r;
 
-        glowCircle(x, y, n.size*6, (i===hoverIndex ? '#d9fbffff' : '#d9fbff88'), 1);
+        const highlight = (i===hoverIndex);
 
-        // body
-        ctx.beginPath(); ctx.arc(x, y, n.size*(i===hoverIndex ? 1.45 : 1), 0, TAU);
-        const g = ctx.createRadialGradient(x, y, 0, x, y, n.size*1.4);
-        g.addColorStop(0, '#ffffff'); g.addColorStop(1, NODE);
-        ctx.fillStyle = g; ctx.fill();
+        glowCircle(x,y,n.size*6, highlight ? '#d9fbffff' : '#d9fbffbb',1);
+        ctx.beginPath(); ctx.arc(x,y,n.size*(highlight?1.45:1),0,TAU);
+        const g = ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
+        g.addColorStop(0,'#fff'); g.addColorStop(1,NODE);
+        ctx.fillStyle=g; ctx.fill();
+        ctx.strokeStyle = highlight ? '#ffffffee' : '#ffffffaa'; ctx.lineWidth = 0.9*DPR; ctx.stroke();
 
-        // outline to pop
-        ctx.strokeStyle = '#ffffffaa'; ctx.lineWidth = 0.8*DPR; ctx.stroke();
-
-        // link
+        // link to core
         ctx.globalAlpha = 0.35; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR;
-        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha = 1;
 
-        if (i === hoverIndex){
-          const label = n.label;
-          ctx.font = `${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
-          const pad = 6*DPR, textW = ctx.measureText(label).width;
-          const bx = x + 10*DPR, by = y - 10*DPR, bw = textW + pad*2, bh = 22*DPR + pad*2, rx = 6*DPR;
-
-          ctx.beginPath();
-          const r2 = Math.min(rx, bw/2, bh/2);
-          ctx.moveTo(bx - pad + r2, by - 14*DPR - pad);
-          ctx.lineTo(bx - pad + bw - r2, by - 14*DPR - pad);
-          ctx.quadraticCurveTo(bx - pad + bw, by - 14*DPR - pad, bx - pad + bw, by - 14*DPR - pad + r2);
-          ctx.lineTo(bx - pad + bw, by - 14*DPR - pad + bh - r2);
-          ctx.quadraticCurveTo(bx - pad + bw, by - 14*DPR - pad + bh, bx - pad + bw - r2, by - 14*DPR - pad + bh);
-          ctx.lineTo(bx - pad + r2, by - 14*DPR - pad + bh);
-          ctx.quadraticCurveTo(bx - pad, by - 14*DPR - pad + bh, bx - pad, by - 14*DPR - pad + bh - r2);
-          ctx.lineTo(bx - pad, by - 14*DPR - pad + r2);
-          ctx.quadraticCurveTo(bx - pad, by - 14*DPR - pad, bx - pad + r2, by - 14*DPR - pad);
-
-          ctx.fillStyle = 'rgba(12,16,22,0.92)'; ctx.fill();
-          ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.globalAlpha = 0.8; ctx.stroke(); ctx.globalAlpha = 1;
-          ctx.fillStyle = ACCENT; ctx.fillText(label, bx, by + 6*DPR);
-        }
+        // ALWAYS SHOW LABEL
+        drawLabel(x,y,n.theta,n.label,highlight);
       });
     }
 
@@ -399,37 +341,28 @@
       const my = (e.clientY - rect.top) * DPR;
       let found = null;
       for (let i=0;i<nodes.length;i++){
-        const n = nodes[i], r = n.baseR * scale * 0.5;
-        const x = cx + Math.cos(n.theta) * r, y = cy + Math.sin(n.theta) * r;
+        const n = nodes[i], r = n.baseR*scale*.5;
+        const x = cx + Math.cos(n.theta)*r, y = cy + Math.sin(n.theta)*r;
         const hit = n.size*3.5, dx = mx - x, dy = my - y;
         if (dx*dx + dy*dy <= hit*hit) { found = i; break; }
       }
       hoverIndex = found;
     });
     canvas.addEventListener('click', ()=> paused = !paused);
-    document.getElementById('toggleSimBtn')?.addEventListener('click', ()=> { paused = !paused; });
-    window.addEventListener('resize', ()=>{ resize(); seedStars(); });
+    document.getElementById('toggleSimBtn')?.addEventListener('click', ()=> paused = !paused);
+    window.addEventListener('resize', resize);
 
-    // Animation (with per-frame size check)
-    let raf = 0;
+    // Loop
     function frame(t){
-      // if layout changed (mobile address bar show/hide), re-measure
-      if (w !== lastW || h !== lastH) { lastW = w; lastH = h; }
-      const r = container.getBoundingClientRect();
-      const cw = (r.width * DPR) | 0, ch = (r.height * DPR) | 0;
-      if (cw !== w || ch !== h) { resize(); seedStars(); }
-
-      raf = requestAnimationFrame(frame);
-      drawHolGrid(t);
+      grid(t);
       drawStars(t);
       drawRings(t);
       drawCore(t);
       drawNodes();
+      requestAnimationFrame(frame);
     }
-
-    // Start
     ctx.fillStyle = BG; ctx.fillRect(0,0,canvas.width,canvas.height);
-    frame(performance.now());
+    requestAnimationFrame(frame);
   })();
   </script>
 </body>
