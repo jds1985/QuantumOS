@@ -44,7 +44,7 @@
     li{margin:8px 0;color:#d6d5d0}
     .status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
     .pill{background:#15161a;border:1px solid var(--edge);border-radius:12px;padding:14px;font-size:14px;color:#d8d7d2}
-    .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:var(--muted)}
+    .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:#d8d7d2}
     .links{display:flex;gap:14px;align-items:center}
     @media (max-width:900px){
       .hero{grid-template-columns:1fr}
@@ -183,181 +183,166 @@
     const container = document.getElementById('quantum-sim');
     if (!container) return;
 
-    // Clear fallback and insert canvas
+    // Canvas
     while (container.firstChild) container.removeChild(container.firstChild);
     const canvas = document.createElement('canvas');
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
     container.appendChild(canvas);
-
     const ctx = canvas.getContext('2d', { alpha: false });
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-    // Palette (holographic hues)
+    // Colors / style
     const BG = '#05060a';
-    const CORE_A = '#7bdcff';   // cyan glow
-    const CORE_B = '#b474ff';   // violet glow
-    const RING = '#1f2633';
-    const ACCENT = '#8fe7ff';
-    const NODE = '#c8f3ff';
+    const CORE_A = '#86e7ff';
+    const CORE_B = '#b681ff';
+    const RING = '#8fe7ff';
+    const ACCENT = '#9be8ff';
+    const NODE = '#d9fbff';
 
-    // Size / scale
-    let w=0,h=0,cx=0,cy=0,scale=0;
+    // Size
+    let w=0,h=0,cx=0,cy=0,scale=0, lastW=0, lastH=0;
     function resize() {
       const r = container.getBoundingClientRect();
       canvas.width = Math.max(1, (r.width * DPR) | 0);
       canvas.height = Math.max(1, (r.height * DPR) | 0);
-      w = canvas.width; h = canvas.height;
-      cx = w/2; cy = h/2; scale = Math.min(w,h);
+      w = canvas.width; h = canvas.height; cx = w/2; cy = h/2; scale = Math.min(w,h);
+      lastW = w; lastH = h;
     }
     resize();
 
-    // Utility
+    // Utils
     const TAU = Math.PI*2;
     const rand = (a,b)=>a+Math.random()*(b-a);
 
-    // Background grid (holographic)
+    // Grid + scanlines
     function drawHolGrid(t){
-      ctx.save();
-      ctx.globalAlpha = 0.9;
+      // soft clear
       ctx.fillStyle = BG;
       ctx.fillRect(0,0,w,h);
 
       // radial haze
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale*0.7);
-      g.addColorStop(0, '#0b0d13');
-      g.addColorStop(1, BG);
-      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+      const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale*0.7);
+      rg.addColorStop(0, '#0b0d13');
+      rg.addColorStop(1, BG);
+      ctx.fillStyle = rg; ctx.fillRect(0,0,w,h);
 
-      // subtle scanlines
-      ctx.globalAlpha = 0.06;
-      ctx.fillStyle = '#7bdcff';
+      // scanlines (brighter for mobile visibility)
+      ctx.globalAlpha = 0.1;
       const step = 8 * DPR;
       const shift = ((t*0.12)|0) % step;
-      for (let y = -shift; y < h; y += step) {
-        ctx.fillRect(0, y, w, 1);
-      }
+      for (let y = -shift; y < h; y += step) ctx.fillRect(0, y, w, 1);
+      ctx.globalAlpha = 1;
 
-      // polar grid rings
-      ctx.globalAlpha = 0.08;
-      ctx.strokeStyle = '#8fe7ff';
+      // polar grid
+      ctx.strokeStyle = '#7bdcff55';
       ctx.lineWidth = 1 * DPR;
       for (let r = scale*0.12; r <= scale*0.6; r += scale*0.08) {
         ctx.beginPath(); ctx.arc(cx, cy, r*0.5, 0, TAU); ctx.stroke();
       }
-
       // spokes
+      ctx.strokeStyle = '#7bdcff40';
       const spokes = 16;
-      ctx.globalAlpha = 0.06;
       for (let i=0;i<spokes;i++){
-        const a = (i/spokes)*TAU + t*0.0003;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
+        const a = (i/spokes)*TAU + t*0.00025;
+        ctx.beginPath(); ctx.moveTo(cx, cy);
         ctx.lineTo(cx + Math.cos(a)*scale*0.35, cy + Math.sin(a)*scale*0.35);
         ctx.stroke();
       }
-      ctx.restore();
-      ctx.globalAlpha = 1;
     }
 
-    // Starfield (depth)
-    const starCount = Math.floor(240 * (scale/900));
-    const stars = Array.from({length: starCount}, () => ({
-      x: rand(0,w), y: rand(0,h), z: rand(0.2,1), s: rand(0.4,1.8)*DPR, tw: rand(0.6,1.6)
-    }));
+    // Stars
+    const starCount = 260;
+    let stars = [];
+    function seedStars(){
+      stars = Array.from({length: starCount}, () => ({
+        x: rand(0,w), y: rand(0,h), z: rand(0.2,1), s: rand(0.6,1.8)*DPR, tw: rand(0.6,1.6)
+      }));
+    }
+    seedStars();
     function drawStars(t){
       for (const s of stars){
         const tw = 0.6 + 0.4 * Math.sin((t*0.0012 + s.x*0.01) * s.tw);
-        ctx.globalAlpha = 0.45 * s.z * tw;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.s*s.z, 0, TAU);
-        ctx.fillStyle = '#a4b2c9';
-        ctx.fill();
+        ctx.globalAlpha = 0.55 * s.z * tw;
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.s*s.z, 0, TAU);
+        ctx.fillStyle = '#b0bed4'; ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
 
-    // Rings (counter-rotating, dashed)
+    // Rings
     const rings = [
-      { r:.18, w:2.0, speed:  0.06, dash: 42 },
-      { r:.28, w:2.4, speed: -0.04, dash: 50 },
-      { r:.39, w:2.8, speed:  0.03, dash: 60 },
-      { r:.51, w:3.0, speed: -0.02, dash: 72 },
+      { r:.18, w:2.4, speed:  0.06, dash: 46 },
+      { r:.28, w:3.0, speed: -0.04, dash: 54 },
+      { r:.39, w:3.2, speed:  0.03, dash: 64 },
+      { r:.51, w:3.4, speed: -0.02, dash: 78 },
     ];
-    function glowCircle(x,y,r,color){
+    function glowCircle(x,y,r,color, alpha=1){
       const grad = ctx.createRadialGradient(x,y,0,x,y,r);
       grad.addColorStop(0, color);
-      grad.addColorStop(0.4, color + 'a0');
+      grad.addColorStop(0.35, color + 'cc');
       grad.addColorStop(1, '#0000');
+      ctx.globalAlpha = alpha;
       ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill();
+      ctx.globalAlpha = 1;
     }
     function drawRings(t){
-      ctx.save();
       ctx.lineCap = 'round';
       for (const def of rings){
         const baseR = def.r * scale * 0.5;
         const dash = def.dash * DPR, gap = dash * 0.78;
         const rot = t * def.speed;
 
-        // holographic edge glow
-        glowCircle(cx, cy, baseR + 14*DPR, '#49c8ff33');
+        glowCircle(cx, cy, baseR + 16*DPR, '#5ad2ff44', 1);
 
-        // ring stroke with additive blend
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(rot);
         ctx.setLineDash([dash, gap]);
         ctx.lineWidth = def.w * DPR;
 
-        // cyan/violet gradient stroke
-        const lg = ctx.createLinearGradient(-baseR, 0, baseR, 0);
-        lg.addColorStop(0, '#71e1ff');
-        lg.addColorStop(1, '#b474ff');
-        ctx.strokeStyle = lg;
-        ctx.globalCompositeOperation = 'lighter';
-
+        // brighter single color for reliability + slight alpha
+        ctx.globalAlpha = 0.95;
+        ctx.strokeStyle = RING;
         ctx.beginPath(); ctx.arc(0, 0, baseR, 0, TAU); ctx.stroke();
         ctx.restore();
+        ctx.globalAlpha = 1;
       }
-      ctx.restore();
-      ctx.globalCompositeOperation = 'source-over';
     }
 
-    // Core (dual-tone holographic pulse)
+    // Core
     function drawCore(t){
       const pulse = 1 + 0.06 * Math.sin(t*0.003);
-      const coreR = (scale*0.065) * pulse;
-
-      glowCircle(cx, cy, coreR*3.5, CORE_A);
-      glowCircle(cx, cy, coreR*2.4, CORE_B);
+      const coreR = (scale*0.07) * pulse;
+      glowCircle(cx, cy, coreR*3.8, CORE_A, 1);
+      glowCircle(cx, cy, coreR*2.6, CORE_B, 0.9);
 
       ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, TAU);
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-      g.addColorStop(0, '#ffffff'); g.addColorStop(0.6, CORE_A); g.addColorStop(1, CORE_B);
-      ctx.fillStyle = g; ctx.globalCompositeOperation = 'lighter'; ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(0.55, CORE_A);
+      g.addColorStop(1, CORE_B);
+      ctx.fillStyle = g; ctx.fill();
 
-      // crosshair
-      ctx.globalAlpha = 0.35; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR;
-      ctx.beginPath(); ctx.moveTo(cx-coreR*2, cy); ctx.lineTo(cx+coreR*2, cy);
-      ctx.moveTo(cx, cy-coreR*2); ctx.lineTo(cx, cy+coreR*2); ctx.stroke();
+      // crosshair (brighter)
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.5*DPR;
+      ctx.beginPath(); ctx.moveTo(cx-coreR*2.2, cy); ctx.lineTo(cx+coreR*2.2, cy);
+      ctx.moveTo(cx, cy-coreR*2.2); ctx.lineTo(cx, cy+coreR*2.2); ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
-    // Nodes (orbiting subsystems)
+    // Nodes
     const labels = ['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
     const nodes = Array.from({length: 8}, (_,i)=>({
       baseR: 0.20 + i*0.055 + rand(-0.01,0.01),
-      size: (i===0? 4.8 : rand(2.4,3.8)) * DPR,
+      size: (i===0? 6.0 : rand(3.2,4.8)) * DPR,   // bigger for mobile visibility
       theta: rand(0, TAU),
       speed: (i%2===0? 1 : -1) * rand(0.0026, 0.006),
       label: labels[i % labels.length],
       id: i
     }));
-
-    let paused = false;
-    let hoverIndex = null;
+    let paused = false, hoverIndex = null;
 
     function drawNodes(){
       nodes.forEach((n, i) => {
@@ -366,23 +351,22 @@
         const x = cx + Math.cos(n.theta) * r;
         const y = cy + Math.sin(n.theta) * r;
 
-        // trail glow
-        glowCircle(x, y, n.size*6, (i===hoverIndex? '#c8f3ffff' : '#c8f3ff88'));
+        glowCircle(x, y, n.size*6, (i===hoverIndex ? '#d9fbffff' : '#d9fbff88'), 1);
 
-        // node body (holographic blend)
-        ctx.beginPath(); ctx.arc(x, y, n.size*(i===hoverIndex ? 1.5 : 1), 0, TAU);
+        // body
+        ctx.beginPath(); ctx.arc(x, y, n.size*(i===hoverIndex ? 1.45 : 1), 0, TAU);
         const g = ctx.createRadialGradient(x, y, 0, x, y, n.size*1.4);
         g.addColorStop(0, '#ffffff'); g.addColorStop(1, NODE);
-        ctx.globalCompositeOperation = 'lighter';
         ctx.fillStyle = g; ctx.fill();
-        ctx.globalCompositeOperation = 'source-over';
 
-        // link line
-        ctx.globalAlpha = 0.25; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR;
+        // outline to pop
+        ctx.strokeStyle = '#ffffffaa'; ctx.lineWidth = 0.8*DPR; ctx.stroke();
+
+        // link
+        ctx.globalAlpha = 0.35; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR;
         ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
         ctx.globalAlpha = 1;
 
-        // label bubble on hover
         if (i === hoverIndex){
           const label = n.label;
           ctx.font = `${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
@@ -402,7 +386,7 @@
           ctx.quadraticCurveTo(bx - pad, by - 14*DPR - pad, bx - pad + r2, by - 14*DPR - pad);
 
           ctx.fillStyle = 'rgba(12,16,22,0.92)'; ctx.fill();
-          ctx.globalAlpha = 0.7; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.stroke(); ctx.globalAlpha = 1;
+          ctx.strokeStyle = ACCENT; ctx.lineWidth = 1*DPR; ctx.globalAlpha = 0.8; ctx.stroke(); ctx.globalAlpha = 1;
           ctx.fillStyle = ACCENT; ctx.fillText(label, bx, by + 6*DPR);
         }
       });
@@ -415,25 +399,26 @@
       const my = (e.clientY - rect.top) * DPR;
       let found = null;
       for (let i=0;i<nodes.length;i++){
-        const n = nodes[i];
-        const r = n.baseR * scale * 0.5;
-        const x = cx + Math.cos(n.theta) * r;
-        const y = cy + Math.sin(n.theta) * r;
-        const hit = n.size*3.5;
-        const dx = mx - x, dy = my - y;
+        const n = nodes[i], r = n.baseR * scale * 0.5;
+        const x = cx + Math.cos(n.theta) * r, y = cy + Math.sin(n.theta) * r;
+        const hit = n.size*3.5, dx = mx - x, dy = my - y;
         if (dx*dx + dy*dy <= hit*hit) { found = i; break; }
       }
       hoverIndex = found;
     });
     canvas.addEventListener('click', ()=> paused = !paused);
-    window.addEventListener('resize', resize);
-
-    // Toggle button dispatch (pause via external control)
     document.getElementById('toggleSimBtn')?.addEventListener('click', ()=> { paused = !paused; });
+    window.addEventListener('resize', ()=>{ resize(); seedStars(); });
 
-    // Animation loop
+    // Animation (with per-frame size check)
     let raf = 0;
     function frame(t){
+      // if layout changed (mobile address bar show/hide), re-measure
+      if (w !== lastW || h !== lastH) { lastW = w; lastH = h; }
+      const r = container.getBoundingClientRect();
+      const cw = (r.width * DPR) | 0, ch = (r.height * DPR) | 0;
+      if (cw !== w || ch !== h) { resize(); seedStars(); }
+
       raf = requestAnimationFrame(frame);
       drawHolGrid(t);
       drawStars(t);
@@ -442,7 +427,7 @@
       drawNodes();
     }
 
-    // Prime background and go
+    // Start
     ctx.fillStyle = BG; ctx.fillRect(0,0,canvas.width,canvas.height);
     frame(performance.now());
   })();
