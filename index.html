@@ -104,7 +104,7 @@
     <section class="card" style="margin-top:24px">
       <h3>Quantum OS Architecture Simulation</h3>
 
-      <!-- Mount point for your React/Canvas sim -->
+      <!-- Mount point for your Canvas sim -->
       <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization">
         <div class="sim-fallback">Loading Quantum Core & Rings…</div>
       </div>
@@ -176,33 +176,14 @@
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
 
-  <!-- Boot script: loads your simulation bundle and mounts it -->
-  <script type="module">
+  <!-- Load the sim (non‑module) and wire the toggle -->
+  <script src="/quantum-simulation.js"></script>
+  <script>
+    // If your JS is at the same level as index.html (not in /public), you can also use "./quantum-simulation.js"
     const container = document.getElementById('quantum-sim');
-    const toggleBtn = document.getElementById('toggleSimBtn');
-
-    // Forward a custom toggle event to the sim (your component can listen for it)
-    toggleBtn?.addEventListener('click', () => {
+    document.getElementById('toggleSimBtn')?.addEventListener('click', () => {
       container.dispatchEvent(new CustomEvent('quantum:toggle'));
     });
-
-    // Try to import your bundle and render
-    (async () => {
-      try {
-        // Your file should export: export function renderQuantumSimulation(container) { ... }
-        const mod = await import('./quantum-simulation.js');
-        if (typeof mod.renderQuantumSimulation === 'function') {
-          mod.renderQuantumSimulation(container);
-        } else if (typeof window.renderQuantumSimulation === 'function') {
-          window.renderQuantumSimulation(container);
-        } else {
-          throw new Error('renderQuantumSimulation() not found in quantum-simulation.js');
-        }
-      } catch (err) {
-        console.warn('Simulation not initialized:', err?.message || err);
-        // Keep the fallback visible; no hard failure
-      }
-    })();
   </script>
 </body>
 </html>
