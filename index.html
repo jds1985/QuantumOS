@@ -45,12 +45,12 @@
     @media (max-width:900px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:1fr} .status{grid-template-columns:1fr} .footer{flex-direction:column;align-items:flex-start} }
 
     /* Simulation container */
-    .sim-shell{position:relative; width:100%; height:600px; overflow:hidden; border:1px solid var(--edge); border-radius:12px; background:#05060a;}
+    .sim-shell{
+      position:relative; width:100%; height:600px; overflow:hidden;
+      border:1px solid var(--edge); border-radius:12px; background:#05060a;
+    }
     .sim-controls{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:#b9b8b3; font-size:14px;}
     .btn-ghost{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--edge); background:rgba(255,255,255,.02); color:var(--ink); text-decoration:none; cursor:pointer;}
-
-    /* Diagnostics overlay */
-    .diag{position:absolute; top:8px; left:8px; z-index:10; background:rgba(10,14,18,.8); color:#cde9ff; border:1px solid #2b3a46; border-radius:8px; font:12px/1.3 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto; padding:8px 10px; pointer-events:none; white-space:pre; min-width:180px;}
   </style>
 </head>
 <body>
@@ -87,13 +87,10 @@
     <section class="card" style="margin-top:24px">
       <h3>Quantum OS Architecture Simulation</h3>
 
-      <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization">
-        <div class="diag" id="diag">booting…</div>
-        <!-- canvas injected by script -->
-      </div>
+      <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization"></div>
 
       <div class="sim-controls">
-        <span>Labels visible • diagnostics on</span>
+        <span>Labels visible • holographic motion</span>
         <button class="btn-ghost" id="toggleSimBtn" type="button">Toggle Pause</button>
       </div>
 
@@ -134,184 +131,138 @@
   
   <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 
-  <!-- Holographic simulation (RGBA-only gradients) -->
+  <!-- Holographic simulation (RGBA-only gradients, production) -->
   <script>
   (function(){
     const container = document.getElementById('quantum-sim');
-    const diag = document.getElementById('diag');
-    const status = (m)=>{ if(diag) diag.textContent = m; };
 
-    try{
-      // Canvas
-      const canvas = document.createElement('canvas');
-      canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.display = 'block';
-      container.appendChild(canvas);
-      const ctx = canvas.getContext('2d', { alpha:false });
-      if(!ctx){ status('ERROR: no 2D ctx'); return; }
+    const canvas = document.createElement('canvas');
+    canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.display = 'block';
+    container.appendChild(canvas);
+    const ctx = canvas.getContext('2d', { alpha:false });
 
-      // Numbers (RGB triplets for RGBA use)
-      const CORE_A = [134,231,255];
-      const CORE_B = [182,129,255];
-      const RING   = [159,228,255];
-      const ACCENT = [155,232,255];
-      const NODE   = [229,251,255];
+    const CORE_A = [134,231,255], CORE_B = [182,129,255], RING = [159,228,255], ACCENT = [155,232,255], NODE = [229,251,255];
+    const RGBA = (c,a)=>`rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
-      const RGBA = (arr,a)=>`rgba(${arr[0]},${arr[1]},${arr[2]},${a})`;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let w=0,h=0,cx=0,cy=0,scale=0, paused=false;
 
-      const DPR = Math.min(window.devicePixelRatio || 1, 2);
-      let w=0,h=0,cx=0,cy=0,scale=0, paused=false, fps=0, lastT=performance.now();
-
-      function resize(){
-        const r=container.getBoundingClientRect();
-        canvas.width = Math.max(1, (r.width * DPR) | 0);
-        canvas.height= Math.max(1, (r.height* DPR) | 0);
-        w=canvas.width; h=canvas.height; cx=w/2; cy=h/2; scale=Math.min(w,h);
-      }
-      resize();
-      window.addEventListener('resize', resize);
-      document.getElementById('toggleSimBtn')?.addEventListener('click',()=>{ paused=!paused; });
-
-      const TAU=Math.PI*2;
-      const rand=(a,b)=>a+Math.random()*(b-a);
-
-      function glow(x,y,r,cArr,a=1){
-        const g=ctx.createRadialGradient(x,y,0,x,y,r);
-        g.addColorStop(0, RGBA(cArr,1));
-        g.addColorStop(0.35, RGBA(cArr,0.8));
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.globalAlpha=a; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1;
-      }
-      function roundedRect(c,x,y,w2,h2,r){
-        const rr=Math.min(r,w2/2,h2/2);
-        c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr);
-        c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2);
-        c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr);
-        c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y);
-      }
-
-      // Stars
-      const stars = Array.from({length:240},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.6)*DPR,tw:rand(.6,1.6)}));
-
-      function drawBG(t){
-        // base + haze
-        ctx.fillStyle='#05060a'; ctx.fillRect(0,0,w,h);
-        const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,scale*0.7);
-        rg.addColorStop(0,'rgba(11,13,19,1)');
-        rg.addColorStop(1,'rgba(5,6,10,1)');
-        ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
-
-        // scanlines
-        ctx.globalAlpha=0.12;
-        const step=8*DPR, shift=((t*0.18)|0)%step;
-        for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1);
-        ctx.globalAlpha=1;
-
-        // polar grid
-        ctx.strokeStyle='rgba(128,223,255,0.4)'; ctx.lineWidth=1.2*DPR;
-        for(let r=scale*.12;r<=scale*.6;r+=scale*.08){ ctx.beginPath(); ctx.arc(cx,cy,r*.5,0,TAU); ctx.stroke(); }
-        // spokes
-        ctx.strokeStyle='rgba(128,223,255,0.33)';
-        const spokes=16, rot=t*0.00045;
-        for(let i=0;i<spokes;i++){ const a=(i/spokes)*TAU+rot; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*scale*.35, cy+Math.sin(a)*scale*.35); ctx.stroke(); }
-
-        // stars
-        for(const s of stars){
-          const x=s.x*w, y=s.y*h, tw=.6+.4*Math.sin((t*.0012 + x*.01)*s.tw);
-          ctx.globalAlpha=.55*s.z*tw; ctx.beginPath(); ctx.arc(x,y,s.s*s.z,0,TAU); ctx.fillStyle='rgba(176,190,212,1)'; ctx.fill();
-        }
-        ctx.globalAlpha=1;
-      }
-
-      // System rings
-      const rings=[{r:.18,w:2.8,s:0.12,d:46},{r:.28,w:3.4,s:-0.08,d:56},{r:.39,w:3.6,s:0.06,d:68},{r:.51,w:3.8,s:-0.04,d:82}];
-      function drawRings(t){
-        ctx.lineCap='round';
-        for(const def of rings){
-          const baseR=def.r*scale*.5, dash=def.d*DPR, gap=dash*.78, rot=t*def.s;
-          glow(cx,cy,baseR+18*DPR,RING,1);
-          ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); ctx.setLineDash([dash,gap]); ctx.lineWidth=def.w*DPR;
-          ctx.globalAlpha=.96; ctx.strokeStyle=RGBA(RING,1); ctx.beginPath(); ctx.arc(0,0,baseR,0,TAU); ctx.stroke();
-          ctx.restore(); ctx.globalAlpha=1;
-        }
-      }
-
-      // Core
-      function drawCore(t){
-        const pulse=1+.08*Math.sin(t*.0035), r=(scale*.075)*pulse;
-        glow(cx,cy,r*4.0,CORE_A,1); glow(cx,cy,r*2.8,CORE_B,.95);
-        ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU);
-        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-        g.addColorStop(0,'rgba(255,255,255,1)');
-        g.addColorStop(.5, RGBA(CORE_A,1));
-        g.addColorStop(1,  RGBA(CORE_B,1));
-        ctx.fillStyle=g; ctx.fill();
-
-        ctx.globalAlpha=.55; ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1.6*DPR;
-        ctx.beginPath(); ctx.moveTo(cx-r*2.3,cy); ctx.lineTo(cx+r*2.3,cy); ctx.moveTo(cx,cy-r*2.3); ctx.lineTo(cx,cy+r*2.3); ctx.stroke();
-        ctx.globalAlpha=1;
-      }
-
-      // Nodes (labels always on)
-      const LABELS=['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
-      const nodes=Array.from({length:8},(_,i)=>({ baseR:.20+i*.055, size:(i===0?6.5:5)*DPR, theta:Math.random()*TAU, speed:(i%2===0?1:-1)*0.008, label:LABELS[i%LABELS.length] }));
-      let hover=-1;
-
-      function drawLabel(ax,ay,theta,text,hi){
-        const offset=18*DPR + (hi?12*DPR:8*DPR);
-        const bx=ax+Math.cos(theta)*offset, by=ay+Math.sin(theta)*offset;
-        ctx.font=`${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
-        const pad=6*DPR, textW=ctx.measureText(text).width, bw=textW+pad*2, bh=22*DPR+pad*2, rx=6*DPR;
-        ctx.beginPath(); roundedRect(ctx, bx-pad, by-14*DPR-pad, bw, bh, rx);
-        ctx.fillStyle = hi ? 'rgba(12,16,22,0.98)' : 'rgba(12,16,22,0.86)'; ctx.fill();
-        ctx.globalAlpha = hi ? 0.95 : 0.7; ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
-        ctx.fillStyle=RGBA(ACCENT,1); ctx.fillText(text, bx, by+6*DPR);
-        ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx - pad + bw/2, by - 14*DPR - pad + bh); ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
-      }
-
-      function drawNodes(){
-        nodes.forEach((n,i)=>{
-          if(!paused) n.theta += n.speed;
-          const r=n.baseR*scale*.5, x=cx+Math.cos(n.theta)*r, y=cy+Math.sin(n.theta)*r, hi=i===hover;
-          glow(x,y,n.size*6, NODE, hi?1:0.85);
-          ctx.beginPath(); ctx.arc(x,y,n.size*(hi?1.45:1),0,TAU);
-          const g=ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
-          g.addColorStop(0,'rgba(255,255,255,1)');
-          g.addColorStop(1, RGBA(NODE,1));
-          ctx.fillStyle=g; ctx.fill();
-          ctx.strokeStyle=hi?'rgba(255,255,255,0.93)':'rgba(255,255,255,0.67)'; ctx.lineWidth=.9*DPR; ctx.stroke();
-
-          ctx.globalAlpha=.4; ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1*DPR; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha=1;
-
-          drawLabel(x,y,n.theta,n.label,hi);
-        });
-      }
-
-      // Interaction
-      canvas.addEventListener('mousemove', (e)=>{
-        const r=canvas.getBoundingClientRect(); const mx=(e.clientX-r.left)*DPR, my=(e.clientY-r.top)*DPR;
-        hover=-1; for(let i=0;i<nodes.length;i++){ const n=nodes[i], R=n.baseR*scale*.5; const x=cx+Math.cos(n.theta)*R, y=cy+Math.sin(n.theta)*R; const d=(mx-x)*(mx-x)+(my-y)*(my-y); if(d<= (n.size*3.5)*(n.size*3.5)){ hover=i; break; } }
-      });
-
-      // Draw once (static) then animate
-      function drawFrame(t){ drawBG(t); drawRings(t); drawCore(t); drawNodes(); }
-      drawFrame(performance.now());
-      status('ctx ok • static frame drawn');
-
-      function loop(t){
-        const dt=t-lastT; lastT=t; fps=1000/Math.max(1,dt);
-        const r=container.getBoundingClientRect(); const cw=(r.width*DPR)|0, ch=(r.height*DPR)|0;
-        if(cw!==w||ch!==h) resize();
-        drawFrame(t);
-        status(`running\n${w}×${h} @ DPR ${DPR.toFixed(2)}\nFPS ${fps.toFixed(0)}\nPaused: ${paused?'yes':'no'}`);
-        requestAnimationFrame(loop);
-      }
-      requestAnimationFrame(loop);
-
-      // global error hook
-      window.addEventListener('error',(e)=>{ status('ERROR: '+(e.message||'unknown')); });
-    }catch(err){
-      status('FATAL: '+(err && err.message ? err.message : String(err)));
+    function resize(){
+      const r=container.getBoundingClientRect();
+      canvas.width = Math.max(1, (r.width * DPR) | 0);
+      canvas.height= Math.max(1, (r.height* DPR) | 0);
+      w=canvas.width; h=canvas.height; cx=w/2; cy=h/2; scale=Math.min(w,h);
     }
+    resize();
+    window.addEventListener('resize', resize);
+    document.getElementById('toggleSimBtn')?.addEventListener('click',()=>{ paused=!paused; });
+
+    const TAU=Math.PI*2;
+    const rand=(a,b)=>a+Math.random()*(b-a);
+
+    function glow(x,y,r,cArr,a=1){
+      const g=ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0, RGBA(cArr,1));
+      g.addColorStop(0.35, RGBA(cArr,0.8));
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha=a; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1;
+    }
+    function roundedRect(c,x,y,w2,h2,r){
+      const rr=Math.min(r,w2/2,h2/2);
+      c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr);
+      c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2);
+      c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr);
+      c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y);
+    }
+
+    const stars = Array.from({length:240},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.6)*DPR,tw:rand(.6,1.6)}));
+
+    function drawBG(t){
+      ctx.fillStyle='rgba(5,6,10,1)'; ctx.fillRect(0,0,w,h);
+      const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,scale*0.7);
+      rg.addColorStop(0,'rgba(11,13,19,1)'); rg.addColorStop(1,'rgba(5,6,10,1)');
+      ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
+
+      ctx.globalAlpha=0.12; const step=8*DPR, shift=((t*0.18)|0)%step;
+      for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1); ctx.globalAlpha=1;
+
+      ctx.strokeStyle='rgba(128,223,255,0.4)'; ctx.lineWidth=1.2*DPR;
+      for(let r=scale*.12;r<=scale*.6;r+=scale*.08){ ctx.beginPath(); ctx.arc(cx,cy,r*.5,0,TAU); ctx.stroke(); }
+      ctx.strokeStyle='rgba(128,223,255,0.33)'; const spokes=16, rot=t*0.00045;
+      for(let i=0;i<spokes;i++){ const a=(i/spokes)*TAU+rot; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*scale*.35, cy+Math.sin(a)*scale*.35); ctx.stroke(); }
+
+      for(const s of stars){
+        const x=s.x*w, y=s.y*h, tw=.6+.4*Math.sin((t*.0012 + x*.01)*s.tw);
+        ctx.globalAlpha=.55*s.z*tw; ctx.beginPath(); ctx.arc(x,y,s.s*s.z,0,TAU); ctx.fillStyle='rgba(176,190,212,1)'; ctx.fill();
+      }
+      ctx.globalAlpha=1;
+    }
+
+    const rings=[{r:.18,w:2.8,s:0.12,d:46},{r:.28,w:3.4,s:-0.08,d:56},{r:.39,w:3.6,s:0.06,d:68},{r:.51,w:3.8,s:-0.04,d:82}];
+    function drawRings(t){
+      ctx.lineCap='round';
+      for(const def of rings){
+        const baseR=def.r*scale*.5, dash=def.d*DPR, gap=dash*.78, rot=t*def.s;
+        glow(cx,cy,baseR+18*DPR,RING,1);
+        ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot); ctx.setLineDash([dash,gap]); ctx.lineWidth=def.w*DPR;
+        ctx.globalAlpha=.96; ctx.strokeStyle=RGBA(RING,1); ctx.beginPath(); ctx.arc(0,0,baseR,0,TAU); ctx.stroke();
+        ctx.restore(); ctx.globalAlpha=1;
+      }
+    }
+
+    function drawCore(t){
+      const pulse=1+.08*Math.sin(t*.0035), r=(scale*.075)*pulse;
+      glow(cx,cy,r*4.0,CORE_A,1); glow(cx,cy,r*2.8,CORE_B,.95);
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU);
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+      g.addColorStop(0,'rgba(255,255,255,1)');
+      g.addColorStop(.5, RGBA(CORE_A,1));
+      g.addColorStop(1,  RGBA(CORE_B,1));
+      ctx.fillStyle=g; ctx.fill();
+
+      ctx.globalAlpha=.55; ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1.6*DPR;
+      ctx.beginPath(); ctx.moveTo(cx-r*2.3,cy); ctx.lineTo(cx+r*2.3,cy); ctx.moveTo(cx,cy-r*2.3); ctx.lineTo(cx,cy+r*2.3); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+
+    const LABELS=['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
+    const nodes=Array.from({length:8},(_,i)=>({ baseR:.20+i*.055, size:(i===0?6.5:5)*DPR, theta:Math.random()*TAU, speed:(i%2===0?1:-1)*0.008, label:LABELS[i%LABELS.length] }));
+    let hover=-1;
+
+    function drawLabel(ax,ay,theta,text,hi){
+      const offset=18*DPR + (hi?12*DPR:8*DPR);
+      const bx=ax+Math.cos(theta)*offset, by=ay+Math.sin(theta)*offset;
+      ctx.font=`${12*DPR}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto`;
+      const pad=6*DPR, textW=ctx.measureText(text).width, bw=textW+pad*2, bh=22*DPR+pad*2, rx=6*DPR;
+      ctx.beginPath(); roundedRect(ctx, bx-pad, by-14*DPR-pad, bw, bh, rx);
+      ctx.fillStyle = hi ? 'rgba(12,16,22,0.98)' : 'rgba(12,16,22,0.86)'; ctx.fill();
+      ctx.globalAlpha = hi ? 0.95 : 0.7; ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
+      ctx.fillStyle=RGBA(ACCENT,1); ctx.fillText(text, bx, by+6*DPR);
+      ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx - pad + bw/2, by - 14*DPR - pad + bh); ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
+    }
+
+    function drawNodes(){
+      nodes.forEach((n,i)=>{
+        if(!paused) n.theta += n.speed;
+        const r=n.baseR*scale*.5, x=cx+Math.cos(n.theta)*r, y=cy+Math.sin(n.theta)*r, hi=i===hover;
+        glow(x,y,n.size*6, NODE, hi?1:0.85);
+        ctx.beginPath(); ctx.arc(x,y,n.size*(hi?1.45:1),0,TAU);
+        const g=ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
+        g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(1, RGBA(NODE,1));
+        ctx.fillStyle=g; ctx.fill();
+        ctx.strokeStyle=hi?'rgba(255,255,255,0.93)':'rgba(255,255,255,0.67)'; ctx.lineWidth=.9*DPR; ctx.stroke();
+        ctx.globalAlpha=.4; ctx.strokeStyle=RGBA(ACCENT,1); ctx.lineWidth=1*DPR; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha=1;
+        drawLabel(x,y,n.theta,n.label,hi);
+      });
+    }
+
+    function drawFrame(t){
+      const r=container.getBoundingClientRect(); const cw=(r.width*DPR)|0, ch=(r.height*DPR)|0;
+      if(cw!==w||ch!==h) resize();
+      drawBG(t); drawRings(t); drawCore(t); drawNodes();
+    }
+    function loop(t){ drawFrame(t); requestAnimationFrame(loop); }
+    drawFrame(performance.now()); requestAnimationFrame(loop);
   })();
   </script>
 </body>
