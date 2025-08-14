@@ -12,8 +12,7 @@
   <meta name="theme-color" content="#0b0b0c" />
   <style>
     :root{
-      --bg:#0b0b0c; --panel:#111214; --ink:#e8e7e4; --muted:#b9b8b3; --accent:#f15b2a; --ring:#e06f47;
-      --edge:#232428;
+      --bg:#0b0b0c; --panel:#111214; --ink:#e8e7e4; --muted:#b9b8b3; --accent:#f15b2a; --ring:#e06f47; --edge:#232428;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -27,16 +26,15 @@
     .cta{appearance:none;border:none;background:var(--accent);color:#111;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(241,91,42,.25);transition:transform .15s ease,opacity .2s}
     .cta:hover{transform:translateY(-1px);opacity:.95}
     .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;margin-top:24px}
-    .badge{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:#15161a;color:#b9b8b3;border:1px solid var(--edge);font-size:12px}
+    .badge{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:#15161a;color:var(--muted);border:1px solid var(--edge);font-size:12px}
     h1{font-size:clamp(34px,6vw,64px);letter-spacing:.5px;margin:.2em 0 .15em}
     .sub{font-size:clamp(16px,2.2vw,22px);color:#cfcfcb;opacity:.95}
     .rings{width:min(420px,90%);aspect-ratio:1;border-radius:50%;margin:18px auto;background:radial-gradient(circle at 50% 50%,rgba(241,91,42,.2),transparent 55%), #0e0f11;display:grid;place-items:center;border:1px solid var(--edge);box-shadow:0 0 80px rgba(241,91,42,.12) inset; position: relative;}
-    .rings::before,.rings::after{content:"";position:absolute;border-radius:50%;}
     .ring{position:relative;width:78%;aspect-ratio:1;border:2px solid var(--ring);border-radius:50%;display:grid;place-items:center}
     .ring.small{width:46%}
     .ring.tiny{width:22%}
     .core{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px rgba(241,91,42,.8)}
-    .label{position:absolute;top:-24px;color:#b9b8b3;font-size:12px}
+    .label{position:absolute;top:-24px;color:var(--muted);font-size:12px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:36px}
     .card{background:linear-gradient(180deg,#121317,#0c0d0f);border:1px solid #1e2024;border-radius:16px;padding:22px}
     .card h3{margin:0 0 10px;font-size:18px}
@@ -58,9 +56,16 @@
       position:relative; width:100%; height:600px; overflow:hidden;
       border:1px solid var(--edge); border-radius:12px; background:#05060a;
     }
-    .sim-fallback{position:absolute; inset:0; display:grid; place-items:center; color:#b9b8b3;}
     .sim-controls{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; color:#b9b8b3; font-size:14px;}
     .btn-ghost{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--edge); background:rgba(255,255,255,.02); color:var(--ink); text-decoration:none; cursor:pointer;}
+
+    /* Diagnostics overlay */
+    .diag{
+      position:absolute; top:8px; left:8px; z-index:10;
+      background:rgba(10,14,18,.7); color:#cde9ff; border:1px solid #2b3a46; border-radius:8px;
+      font:12px/1.3 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto; padding:8px 10px; pointer-events:none;
+      white-space:pre; min-width:160px;
+    }
   </style>
 </head>
 <body>
@@ -98,11 +103,12 @@
       <h3>Quantum OS Architecture Simulation</h3>
 
       <div id="quantum-sim" class="sim-shell" aria-label="Quantum OS system visualization">
-        <div class="sim-fallback">Loading Quantum Core & Rings…</div>
+        <div class="diag" id="diag">booting…</div>
+        <!-- canvas injected by script -->
       </div>
 
       <div class="sim-controls">
-        <span>Tap nodes for focus • use the button to pause/resume</span>
+        <span>Always-on animation • labels visible</span>
         <button class="btn-ghost" id="toggleSimBtn" type="button">Toggle Pause</button>
       </div>
 
@@ -114,7 +120,7 @@
     <section class="grid">
       <div class="card">
         <h3>Overview</h3>
-        <p>Quantum OS™ is a revolutionary AI operating system architecture designed for autonomous agent ecosystems. It enables AI systems to self-build, coordinate, and evolve at scale through a proprietary <em>Quantum Core + Rings</em> framework. This architecture delivers unprecedented adaptability and efficiency in training, deployment, and multi-agent orchestration.</p>
+        <p>Quantum OS™ is a revolutionary AI operating system architecture designed for autonomous agent ecosystems. It enables AI systems to self-build, coordinate, and evolve at scale through a proprietary <em>Quantum Core + Rings</em> framework.</p>
       </div>
       <div class="card">
         <h3>Status</h3>
@@ -126,27 +132,6 @@
       </div>
     </section>
 
-    <section class="grid">
-      <div class="card">
-        <h3>Key Advantages</h3>
-        <ul>
-          <li><strong>Self-Evolving Ecosystem</strong> — Agents can generate, optimize, and deploy new agents without manual intervention.</li>
-          <li><strong>Scalable Modular Design</strong> — Quantum Core + Rings scales from edge devices to supercomputers.</li>
-          <li><strong>Cross-Domain Capability</strong> — Integrates language, vision, robotics, and IoT.</li>
-          <li><strong>Efficiency Boost</strong> — Parallelized agent workflows reduce cost and latency.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Potential Applications</h3>
-        <ul>
-          <li>Enterprise AI infrastructure & private agent networks</li>
-          <li>Autonomous systems (robotics, vehicles, defense)</li>
-          <li>Cloud-scale AI services & orchestration</li>
-          <li>AI research acceleration & long-term reasoning</li>
-        </ul>
-      </div>
-    </section>
-
     <section class="card wrap" style="margin-top:24px">
       <h3>Download</h3>
       <p>One-page overview PDF for sharing: <a href="/Quantum_OS_Overview.pdf" download>Quantum_OS_Overview.pdf</a></p>
@@ -154,9 +139,7 @@
   </main>
   
   <footer class="wrap footer">
-    <div>
-      © <span id="y"></span> Jim Saenz — Founder & Inventor, Quantum OS™
-    </div>
+    <div>© <span id="y"></span> Jim Saenz — Founder & Inventor, Quantum OS™</div>
     <div class="links">
       <a href="mailto:jimsaenz72@gmail.com">jimsaenz72@gmail.com</a>
       <span>•</span>
@@ -166,78 +149,63 @@
   
   <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 
-  <!-- Holographic Quantum Simulation (inline; faster motion; labels always visible) -->
+  <!-- Holographic Quantum Simulation (inline; with diagnostics) -->
   <script>
   (function(){
     const container = document.getElementById('quantum-sim');
+    const diag = document.getElementById('diag');
     if (!container) return;
 
-    // Canvas setup
-    while (container.firstChild) container.removeChild(container.firstChild);
+    // Canvas
     const canvas = document.createElement('canvas');
     canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.display = 'block';
     container.appendChild(canvas);
     const ctx = canvas.getContext('2d', { alpha: false });
-    const DPR = Math.min(window.devicePixelRatio || 1, 2);
-
-    // Colors
-    const BG = '#05060a', CORE_A = '#86e7ff', CORE_B = '#b681ff', RING = '#9fe4ff', ACCENT = '#9be8ff', NODE = '#e5fbff';
 
     // Sizing
-    let w=0,h=0,cx=0,cy=0,scale=0;
-    function resize(){
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let w=0,h=0,cx=0,cy=0,scale=0, fps=0, lastT=performance.now();
+
+    function resize() {
       const r = container.getBoundingClientRect();
       canvas.width = Math.max(1, (r.width * DPR) | 0);
-      canvas.height= Math.max(1, (r.height * DPR) | 0);
-      w=canvas.width; h=canvas.height; cx=w/2; cy=h/2; scale=Math.min(w,h);
+      canvas.height = Math.max(1, (r.height * DPR) | 0);
+      w = canvas.width; h = canvas.height; cx = w/2; cy = h/2; scale = Math.min(w,h);
     }
     resize();
 
+    // Palette
+    const BG='#05060a', CORE_A='#86e7ff', CORE_B='#b681ff', RING='#9fe4ff', ACCENT='#9be8ff', NODE='#e5fbff';
+
+    // Helpers
     const TAU = Math.PI*2;
-    const rand = (a,b)=>a+Math.random()*(b-a);
+    const rand=(a,b)=>a+Math.random()*(b-a);
 
-    function glow(x,y,r,color,a=1){
-      const g = ctx.createRadialGradient(x,y,0,x,y,r);
-      g.addColorStop(0,color); g.addColorStop(.35,color+'cc'); g.addColorStop(1,'#0000');
-      ctx.globalAlpha=a; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1;
-    }
-    function roundedRect(c, x, y, w2, h2, r){
-      const rr=Math.min(r,w2/2,h2/2);
-      c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr);
-      c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2);
-      c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr);
-      c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y);
-    }
+    function glow(x,y,r,c,a=1){ const g=ctx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,c); g.addColorStop(.35,c+'cc'); g.addColorStop(1,'#0000'); ctx.globalAlpha=a; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); ctx.globalAlpha=1; }
+    function roundedRect(c,x,y,w2,h2,r){ const rr=Math.min(r,w2/2,h2/2); c.moveTo(x+rr,y); c.lineTo(x+w2-rr,y); c.quadraticCurveTo(x+w2,y,x+w2,y+rr); c.lineTo(x+w2,y+h2-rr); c.quadraticCurveTo(x+w2,y+h2,x+w2-rr,y+h2); c.lineTo(x+rr,y+h2); c.quadraticCurveTo(x,y+h2,x,y+h2-rr); c.lineTo(x,y+rr); c.quadraticCurveTo(x,y,x+rr,y); }
 
-    // Background grid
-    function grid(t){
+    // Background grid + stars
+    const stars = Array.from({length:260},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)}));
+    function drawBG(t){
+      // base
       ctx.fillStyle=BG; ctx.fillRect(0,0,w,h);
+      // haze
       const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,scale*.7); rg.addColorStop(0,'#0b0d13'); rg.addColorStop(1,BG);
       ctx.fillStyle=rg; ctx.fillRect(0,0,w,h);
-
-      // brighter scanlines
-      ctx.globalAlpha=.12; const step=8*DPR, shift=((t*.18)|0)%step; for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1); ctx.globalAlpha=1;
-
-      // polar grid
+      // scanlines
+      ctx.globalAlpha=.1; const step=8*DPR, shift=((t*.18)|0)%step; for(let y=-shift;y<h;y+=step) ctx.fillRect(0,y,w,1); ctx.globalAlpha=1;
+      // rings
       ctx.strokeStyle='#80dfff66'; ctx.lineWidth=1.2*DPR;
       for(let r=scale*.12;r<=scale*.6;r+=scale*.08){ ctx.beginPath(); ctx.arc(cx,cy,r*.5,0,TAU); ctx.stroke(); }
-      // rotating spokes
-      ctx.strokeStyle='#80dfff55';
-      const spokes=16, rot=t*0.00045;
+      // spokes
+      ctx.strokeStyle='#80dfff55'; const spokes=16, rot=t*0.00045;
       for(let i=0;i<spokes;i++){ const a=(i/spokes)*TAU+rot; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*scale*.35, cy+Math.sin(a)*scale*.35); ctx.stroke(); }
+      // stars
+      for(const s of stars){ const x=s.x*w, y=s.y*h; const tw=.6+.4*Math.sin((t*.0012 + x*.01)*s.tw); ctx.globalAlpha=.55*s.z*tw; ctx.beginPath(); ctx.arc(x,y,s.s*s.z,0,TAU); ctx.fillStyle='#b0bed4'; ctx.fill(); } ctx.globalAlpha=1;
     }
 
-    // Stars
-    let stars = Array.from({length:260},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)}));
-    function drawStars(t){
-      for(const s of stars){
-        const x=s.x*w, y=s.y*h; const tw=.6+.4*Math.sin((t*.0012 + x*.01)*s.tw);
-        ctx.globalAlpha=.55*s.z*tw; ctx.beginPath(); ctx.arc(x,y,s.s*s.z,0,TAU); ctx.fillStyle='#b0bed4'; ctx.fill();
-      } ctx.globalAlpha=1;
-    }
-
-    // Faster rings
-    const rings=[
+    // System rings
+    const rings = [
       { r:.18, w:2.8, speed:  0.12, dash:46 },
       { r:.28, w:3.4, speed: -0.08, dash:56 },
       { r:.39, w:3.6, speed:  0.06, dash:68 },
@@ -267,16 +235,10 @@
       ctx.globalAlpha=1;
     }
 
-    // Nodes (faster)
-    const labels=['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
-    const nodes=Array.from({length:8},(_,i)=>({
-      baseR:.20+i*.055+rand(-.01,.01),
-      size:(i===0?6.5:rand(3.8,5.2))*DPR,
-      theta:rand(0,TAU),
-      speed:(i%2===0?1:-1)*rand(.006,.012),   // faster!
-      label:labels[i%labels.length]
-    }));
-    let paused=false, hoverIndex=null;
+    // Nodes (labels always on)
+    const LABELS=['Quantum Core','Memory Lattice','Cipher Mesh','Zeo Kernel','PulseChain','AuraThread','Vault Nexus','Signal Gate'];
+    const nodes=Array.from({length:8},(_,i)=>({ baseR:.20+i*.055+rand(-.01,.01), size:(i===0?6.5:rand(3.8,5.2))*DPR, theta:rand(0,TAU), speed:(i%2===0?1:-1)*rand(.006,.012), label:LABELS[i%LABELS.length] }));
+    let paused=false, hover=-1;
 
     function drawLabel(ax,ay,theta,text,hi){
       const offset=18*DPR + (hi?12*DPR:8*DPR);
@@ -287,63 +249,54 @@
       ctx.fillStyle = hi ? 'rgba(12,16,22,0.98)' : 'rgba(12,16,22,0.86)'; ctx.fill();
       ctx.globalAlpha = hi ? 0.95 : 0.7; ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
       ctx.fillStyle=ACCENT; ctx.fillText(text, bx, by+6*DPR);
-      // leader
       ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx - pad + bw/2, by - 14*DPR - pad + bh); ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.stroke(); ctx.globalAlpha=1;
     }
 
-    // orbit trails buffer (extra motion cue)
-    const trail = document.createElement('canvas'); const tctx = trail.getContext('2d',{alpha:true});
-    function resizeTrail(){ trail.width=w; trail.height=h; tctx.clearRect(0,0,w,h); }
-    resizeTrail();
-
     function drawNodes(t){
-      // fade old trails slightly
-      tctx.fillStyle='rgba(5,6,10,0.12)'; tctx.fillRect(0,0,w,h);
-
       nodes.forEach((n,i)=>{
         if(!paused) n.theta += n.speed;
-        const r=n.baseR*scale*.5, x=cx+Math.cos(n.theta)*r, y=cy+Math.sin(n.theta)*r;
-        const hi=i===hoverIndex;
-
-        // draw trail dot into buffer
-        tctx.beginPath(); tctx.arc(x,y,n.size*.35,0,TAU); tctx.fillStyle=hi?'#e5fbff':'#b9ecff'; tctx.globalAlpha=.35; tctx.fill(); tctx.globalAlpha=1;
-
+        const r=n.baseR*scale*.5, x=cx+Math.cos(n.theta)*r, y=cy+Math.sin(n.theta)*r, hi=i===hover;
         glow(x,y,n.size*6, hi?'#e5fbffff':'#e5fbffbb',1);
         ctx.beginPath(); ctx.arc(x,y,n.size*(hi?1.45:1),0,TAU);
         const g=ctx.createRadialGradient(x,y,0,x,y,n.size*1.4);
         g.addColorStop(0,'#fff'); g.addColorStop(1,NODE);
         ctx.fillStyle=g; ctx.fill();
         ctx.strokeStyle=hi?'#ffffffee':'#ffffffaa'; ctx.lineWidth=.9*DPR; ctx.stroke();
-
         ctx.globalAlpha=.4; ctx.strokeStyle=ACCENT; ctx.lineWidth=1*DPR; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.stroke(); ctx.globalAlpha=1;
-
-        // labels always on
         drawLabel(x,y,n.theta,n.label,hi);
       });
-
-      // composite trails under current frame
-      ctx.globalAlpha=1; ctx.drawImage(trail,0,0);
     }
 
     // Interaction
     canvas.addEventListener('mousemove', (e)=>{
       const r=canvas.getBoundingClientRect(); const mx=(e.clientX-r.left)*DPR, my=(e.clientY-r.top)*DPR;
-      let hit=null; for(let i=0;i<nodes.length;i++){ const n=nodes[i], R=n.baseR*scale*.5; const x=cx+Math.cos(n.theta)*R, y=cy+Math.sin(n.theta)*R; const d=(mx-x)*(mx-x)+(my-y)*(my-y); if(d<= (n.size*3.5)*(n.size*3.5)){ hit=i; break; } }
-      hoverIndex=hit;
+      hover=-1; for(let i=0;i<nodes.length;i++){ const n=nodes[i], R=n.baseR*scale*.5; const x=cx+Math.cos(n.theta)*R, y=cy+Math.sin(n.theta)*R; if((mx-x)*(mx-x)+(my-y)*(my-y) <= (n.size*3.5)*(n.size*3.5)){ hover=i; break; } }
     });
-    // Only the button can pause
-    document.getElementById('toggleSimBtn')?.addEventListener('click',()=>{ paused=!paused; });
+    document.getElementById('toggleSimBtn')?.addEventListener('click', ()=> paused=!paused);
+    window.addEventListener('resize', ()=>{ resize(); });
 
-    window.addEventListener('resize', ()=>{ resize(); stars = Array.from({length:260},()=>({x:Math.random(),y:Math.random(),z:rand(.2,1),s:rand(.6,1.8)*DPR,tw:rand(.6,1.6)})); resizeTrail(); });
+    // Diagnostics
+    window.onerror = (msg, src, line, col, err) => {
+      diag.textContent = `ERROR: ${msg}\n${src || ''} ${line || ''}:${col || ''}`;
+    };
 
-    // Animation with per-frame size check
+    // Draw ONCE (so something is visible even if RAF is throttled)
+    (function drawOnce(){
+      const t = performance.now();
+      drawBG(t); drawRings(t); drawCore(t); drawNodes(t);
+    })();
+
+    // Animation loop
     function loop(t){
-      const r=container.getBoundingClientRect(); const cw=(r.width*DPR)|0, ch=(r.height*DPR)|0; if(cw!==w||ch!==h){ resize(); resizeTrail(); }
-      grid(t); drawStars(t); drawRings(t); drawCore(t); drawNodes(t);
+      const dt = t - lastT; lastT = t; fps = 1000 / Math.max(1, dt);
+      // ensure correct size
+      const r=container.getBoundingClientRect(), cw=(r.width*DPR)|0, ch=(r.height*DPR)|0;
+      if (cw!==w || ch!==h) resize();
+
+      drawBG(t); drawRings(t); drawCore(t); drawNodes(t);
+      diag.textContent = `w×h: ${w}×${h}\nDPR: ${DPR.toFixed(2)}\nFPS: ${fps.toFixed(0)}\nPaused: ${paused ? 'yes' : 'no'}`;
       requestAnimationFrame(loop);
     }
-    // start
-    ctx.fillStyle=BG; ctx.fillRect(0,0,canvas.width,canvas.height);
     requestAnimationFrame(loop);
   })();
   </script>
