@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quantum OS™ Blueprints — How It Works</title>
+  <meta name="description" content="Blueprints and technical overview of the Quantum OS™ architecture: Quantum Core + Rings, data flow, and component glossary." />
+  <meta property="og:title" content="Quantum OS™ Blueprints — How It Works" />
+  <meta property="og:description" content="Deep-dive into the Quantum OS™ architecture with diagrams and a component glossary." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0b0b0c" />
+  <style>
+    :root{ --bg:#0b0b0c; --panel:#111214; --ink:#e8e7e4; --muted:#b9b8b3; --accent:#f15b2a; --edge:#232428; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:radial-gradient(1200px 800px at 80% 10%,#141517 0%,#0b0b0c 60%);} 
+    a{color:var(--ink); text-decoration:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:28px}
+    .nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:28px;height:28px;border-radius:50%;background:conic-gradient(from 0deg,#e06f47,#b9461a,#f15b2a,#ff9a73);box-shadow:0 0 0 3px #1c1c1e inset, 0 0 24px rgba(241,91,42,.35)}
+    .tag{font-size:12px;color:var(--muted)}
+    .navlinks{display:flex;gap:14px;align-items:center}
+    .navlink{padding:8px 12px;border:1px solid var(--edge);border-radius:10px;background:rgba(255,255,255,.02);color:var(--ink)}
+    .hero h1{margin:.4em 0 .2em;font-size:clamp(32px,6vw,52px)}
+    .sub{color:#cfcfcb;opacity:.95;font-size:clamp(16px,2.2vw,20px)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px;margin-top:28px}
+    .card{background:linear-gradient(180deg,#121317,#0c0d0f);border:1px solid #1e2024;border-radius:16px;padding:22px}
+    .card h3{margin:0 0 10px;font-size:18px}
+    .figure{background:#0b0c11;border:1px dashed var(--edge);border-radius:14px;padding:16px}
+    .figure svg{width:100%;height:auto;display:block}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block;border:1px solid var(--edge);border-radius:999px;padding:6px 10px;color:#d8d7d2;font-size:12px}
+    .footer{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:36px 0 14px;color:var(--muted)}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header class="wrap nav">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <strong>Quantum OS™</strong>
+        <div class="tag">Blueprints • How it works</div>
+      </div>
+    </div>
+    <nav class="navlinks">
+      <a class="navlink" href="/index.html">Home</a>
+      <a class="navlink" href="/blueprints.html" aria-current="page">Blueprints</a>
+      <a class="navlink" href="mailto:jimsaenz72@gmail.com?subject=Quantum%20OS%20Partnership">Contact</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <span class="pill">Technical overview</span>
+      <h1>Quantum Core + Rings Architecture</h1>
+      <p class="sub">The core orchestrator, concentric data rings, and orbiting service nodes enable scalable, self‑evolving agent ecosystems.</p>
+    </section>
+
+    <section class="grid">
+      <!-- Diagram -->
+      <div class="card" style="grid-column: span 7;">
+        <h3>System Blueprint (high level)</h3>
+        <div class="figure" role="img" aria-label="Quantum OS system blueprint diagram">
+          <!-- Simple inline SVG diagram placeholder (replace with your own later if you like) -->
+          <svg viewBox="0 0 1200 800">
+            <defs>
+              <radialGradient id="coreGlow" cx="50%" cy="50%" r="45%">
+                <stop offset="0%" stop-color="rgba(255,255,255,1)"/>
+                <stop offset="60%" stop-color="rgba(134,231,255,1)"/>
+                <stop offset="100%" stop-color="rgba(182,129,255,1)"/>
+              </radialGradient>
+            </defs>
+            <rect width="1200" height="800" fill="#0b0c11"/>
+            <!-- Rings -->
+            <g stroke="rgba(159,228,255,0.9)" fill="none" stroke-width="2">
+              <circle cx="600" cy="400" r="120"/>
+              <circle cx="600" cy="400" r="200"/>
+              <circle cx="600" cy="400" r="280"/>
+              <circle cx="600" cy="400" r="360"/>
+            </g>
+            <!-- Core -->
+            <circle cx="600" cy="400" r="60" fill="url(#coreGlow)"/>
+            <!-- Spokes -->
+            <g stroke="rgba(159,228,255,0.4)">
+              <line x1="600" y1="40" x2="600" y2="760"/>
+              <line x1="40" y1="400" x2="1160" y2="400"/>
+              <line x1="180" y1="180" x2="1020" y2="620"/>
+              <line x1="180" y1="620" x2="1020" y2="180"/>
+            </g>
+            <!-- Nodes -->
+            <g font-family="Inter,system-ui" font-size="18" fill="rgba(155,232,255,1)">
+              <circle cx="880" cy="400" r="10" fill="white"/><text x="900" y="406">Cipher Mesh</text>
+              <circle cx="600" cy="680" r="10" fill="white"/><text x="620" y="686">Memory Lattice</text>
+              <circle cx="320" cy="400" r="10" fill="white"/><text x="340" y="406">Vault Nexus</text>
+              <circle cx="600" cy="120" r="10" fill="white"/><text x="620" y="126">Signal Gate</text>
+            </g>
+          </svg>
+        </div>
+        <p class="muted" style="margin-top:10px">Diagram shows the Quantum Core (center), concentric data rings, and representative service nodes. The live, interactive version is on the home page.</p>
+      </div>
+
+      <!-- Core responsibilities -->
+      <div class="card" style="grid-column: span 5;">
+        <h3>Quantum Core Responsibilities</h3>
+        <ul>
+          <li><strong>Global policy &amp; goals:</strong> constraint management, safety envelopes, reward shaping.</li>
+          <li><strong>Self‑evolution loop:</strong> propose → evaluate → integrate new agents and tools.</li>
+          <li><strong>Scheduling &amp; memory:</strong> long‑horizon task graphs, episodic/semantic store routing.</li>
+          <li><strong>Observability:</strong> metrics, traces, &amp; causal debugging hooks for every ring.</li>
+        </ul>
+      </div>
+
+      <!-- Data flow -->
+      <div class="card" style="grid-column: span 7;">
+        <h3>Data Flow Across Rings</h3>
+        <ol>
+          <li><strong>Ring 1 — Real‑time I/O:</strong> ingestion, streaming transforms, rapid reflex agents.</li>
+          <li><strong>Ring 2 — Orchestration:</strong> planner/dispatcher, tool selection, safety gates.</li>
+          <li><strong>Ring 3 — Knowledge:</strong> retrieval, long‑term memory, embeddings &amp; graphs.</li>
+          <li><strong>Ring 4 — Compute:</strong> heavy training/inference, batch pipelines, simulators.</li>
+        </ol>
+      </div>
+
+      <!-- Glossary -->
+      <div class="card" style="grid-column: span 5;">
+        <h3>Component Glossary</h3>
+        <ul>
+          <li><strong>Memory Lattice:</strong> hierarchical memory (episodic/semantic/vector/graph).</li>
+          <li><strong>Cipher Mesh:</strong> encryption, identity, key custody, audit trails.</li>
+          <li><strong>Vault Nexus:</strong> secrets &amp; secure payload broker.</li>
+          <li><strong>Signal Gate:</strong> safety filters, content policy, red‑team harness.</li>
+          <li><strong>PulseChain:</strong> async job bus, retries, back‑pressure.</li>
+          <li><strong>AuraThread:</strong> UI/UX agents, session fusion, persona layers.</li>
+        </ul>
+      </div>
+
+      <!-- Links -->
+      <div class="card" style="grid-column: span 12;">
+        <h3>Sharable Resources</h3>
+        <ul>
+          <li><a href="/Quantum_OS_Overview.pdf" download>One‑pager PDF</a></li>
+          <li><a href="/index.html">Interactive Simulation</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <div>© <span id="y"></span> Jim Saenz — Quantum OS™</div>
+    <div class="navlinks">
+      <a class="navlink" href="/index.html">Home</a>
+      <a class="navlink" href="mailto:jimsaenz72@gmail.com">Contact</a>
+    </div>
+  </footer>
+
+  <script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+</body>
+</html>
